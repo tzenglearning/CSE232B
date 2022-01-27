@@ -1,14 +1,18 @@
-//package listener;
-//
-//import java.util.ArrayList;
-//import java.util.List;
-//
-//import org.antlr.v4.runtime.tree.ParseTree;
-//import org.antlr.v4.runtime.tree.ParseTreeProperty;
-//
-//
-//import edu.ucsd.CSE232B.parsers.ExpressionGrammarBaseListener;
-//import edu.ucsd.CSE232B.parsers.ExpressionGrammarParser.ExpContext;
+package listener;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import DOMBuilder.DOMBuilder;
+import edu.ucsd.CSE232B.parsers.ExpressionGrammarParser;
+import org.antlr.v4.runtime.ParserRuleContext;
+import org.antlr.v4.runtime.tree.ErrorNode;
+import org.antlr.v4.runtime.tree.ParseTree;
+import org.antlr.v4.runtime.tree.ParseTreeProperty;
+
+
+import edu.ucsd.CSE232B.parsers.ExpressionGrammarBaseListener;
+import edu.ucsd.CSE232B.parsers.ExpressionGrammarParser.ExpContext;
 //import edu.ucsd.CSE232B.parsers.ExpressionGrammarParser.Expr_BinaryContext;
 //import edu.ucsd.CSE232B.parsers.ExpressionGrammarParser.Expr_NumberContext;
 //import edu.ucsd.CSE232B.parsers.ExpressionGrammarParser.Expr_ParenthesesContext;
@@ -16,47 +20,132 @@
 //import edu.ucsd.CSE232B.parsers.ExpressionGrammarParser.NumberContext;
 //import edu.ucsd.CSE232B.parsers.ExpressionGrammarParser.ProgContext;
 //import edu.ucsd.CSE232B.parsers.ExpressionGrammarParser.VariableContext;
-//import edu.ucsd.cse232b.antlrTutorial.expression.BinaryExpression;
-//import edu.ucsd.cse232b.antlrTutorial.expression.Expression;
-//import edu.ucsd.cse232b.antlrTutorial.expression.NumberConstant;
-//import edu.ucsd.cse232b.antlrTutorial.expression.Operator;
-//import edu.ucsd.cse232b.antlrTutorial.expression.ParaExpression;
-//import edu.ucsd.cse232b.antlrTutorial.expression.Prog;
-//import edu.ucsd.cse232b.antlrTutorial.expression.Variable;
-//
-//public class ExpressionBuilder extends ExpressionGrammarBaseListener {
-//    private ParseTreeProperty<Object> expressionObjects;
-//
-//    /**
-//     * Constructor
-//     */
-//    public ExpressionBuilder() {
-//        expressionObjects = new ParseTreeProperty<Object>();
-//    }
-//
-//    /**
-//     * Set object (parser tree property)
-//     *
-//     * @param subtree subtree
-//     * @param obj  corresponding object
-//     */
-//    private void setObject(ParseTree subtree, Object obj) {
-//        expressionObjects.put(subtree, obj);
-//    }
-//
-//    /**
-//     * Retrieve object from parser tree property
-//     *
-//     * @param obj
-//     * @return expression object
-//     */
-//    private Object retrieveObject(ParseTree obj) {
-//        return expressionObjects.get(obj);
-//    }
-//
-//    public Prog getProg(ParseTree tree){
-//        return (Prog) retrieveObject(tree);
-//    }
+//import expression.BinaryExpression;
+//import expression.Expression;
+//import expression.NumberConstant;
+//import expression.Operator;
+//import expression.ParaExpression;
+//import edu.ucsd.CSE232B.antlrTutorial.expression.Prog;
+//import edu.ucsd.CSE232B.antlrTutorial.expression.Variable;
+import org.antlr.v4.runtime.tree.TerminalNode;
+import org.w3c.dom.Document;
+
+public class ExpressionBuilder extends ExpressionGrammarBaseListener {
+    private ParseTreeProperty<Object> expressionObjects;
+
+    /**
+     * Constructor
+     */
+    public ExpressionBuilder() {
+        expressionObjects = new ParseTreeProperty<Object>();
+    }
+
+    /**
+     * Set object (parser tree property)
+     *
+     * @param subtree subtree
+     * @param obj  corresponding object
+     */
+    private void setObject(ParseTree subtree, Object obj) {
+        expressionObjects.put(subtree, obj);
+    }
+
+    /**
+     * Retrieve object from parser tree property
+     *
+     * @param obj
+     * @return expression object
+     */
+    private Object retrieveObject(ParseTree obj) {
+        return expressionObjects.get(obj);
+    }
+
+    public Document getDocument(ParseTree tree){
+        return (Document) retrieveObject(tree);
+    }
+
+    @Override
+    public void enterProg(ExpressionGrammarParser.ProgContext ctx) {
+    }
+
+    @Override
+    public void exitProg(ExpressionGrammarParser.ProgContext ctx) {
+        Document document = (Document) retrieveObject(ctx.exp(0));
+        setObject(ctx, document);
+    }
+
+    @Override
+    public void enterExp(ExpContext ctx) {
+    }
+
+    @Override
+    public void exitExp(ExpContext ctx) {
+        Document document = (Document) retrieveObject(ctx.docName());
+        setObject(ctx, document);
+    }
+
+    public void enterRp(ExpressionGrammarParser.RpContext ctx) {
+    }
+
+    public void exitRp(ExpressionGrammarParser.RpContext ctx) {
+    }
+
+    public void enterTagName(ExpressionGrammarParser.TagNameContext ctx) {
+    }
+
+    public void exitTagName(ExpressionGrammarParser.TagNameContext ctx) {
+    }
+
+    public void enterAttName(ExpressionGrammarParser.AttNameContext ctx) {
+    }
+
+    public void exitAttName(ExpressionGrammarParser.AttNameContext ctx) {
+    }
+
+    public void enterFilter(ExpressionGrammarParser.FilterContext ctx) {
+    }
+
+    public void exitFilter(ExpressionGrammarParser.FilterContext ctx) {
+    }
+
+    public void enterDocName(ExpressionGrammarParser.DocNameContext ctx) {
+
+    }
+
+    @Override
+    public void exitDocName(ExpressionGrammarParser.DocNameContext ctx) {
+        final ExpressionGrammarParser.FileNameContext filectx = ctx.fileName();
+        String fileName = (String) retrieveObject(ctx.fileName());
+        DOMBuilder dombUilder = new DOMBuilder();
+        Document document = dombUilder.getDocument(fileName);
+        setObject(ctx, document);
+    }
+
+    public void enterFileName(ExpressionGrammarParser.FileNameContext ctx) {
+    }
+
+    @Override
+    public void exitFileName(ExpressionGrammarParser.FileNameContext ctx) {
+        setObject(ctx, ctx.STRING().toString());
+    }
+
+    public void enterStringConst(ExpressionGrammarParser.StringConstContext ctx) {
+    }
+
+    public void exitStringConst(ExpressionGrammarParser.StringConstContext ctx) {
+    }
+
+    public void enterEveryRule(ParserRuleContext ctx) {
+    }
+
+    public void exitEveryRule(ParserRuleContext ctx) {
+    }
+
+    public void visitTerminal(TerminalNode node) {
+    }
+
+    public void visitErrorNode(ErrorNode node) {
+    }
 //    @Override
 //    public void exitProg(ProgContext ctx){
 //        final List<Expression> expressionList = new ArrayList<>();
@@ -111,4 +200,4 @@
 //       final Variable variable  = new Variable(name);
 //       setObject(ctx,variable);
 //    }
-//}
+}

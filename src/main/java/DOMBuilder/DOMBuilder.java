@@ -4,6 +4,7 @@ import org.w3c.dom.*;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -13,65 +14,45 @@ import java.io.Writer;
 public class DOMBuilder {
     static final String outputEncoding = "UTF-8";
 
-    private PrintWriter out;
-    private int indent = 0;
-    private final String basicIndent = " ";
+    public PrintWriter out;
+    public int indent = 0;
+    public final String basicIndent = " ";
 
-    public DOMBuilder(PrintWriter out) {
-        this.out = out;
-    }
-
-    private static void usage() {
-        // ...
+    public DOMBuilder() {
+        this.out = new PrintWriter(System.out);
     }
 
     public static void main(String[] args) throws Exception {
 
-        String filename = null;
-        boolean dtdValidate = false;
-        boolean xsdValidate = false;
-        String schemaSource = null;
+        String fileName = "j_caesar.xml";
+        DOMBuilder builder = new DOMBuilder();
+        Document document = builder.getDocument(fileName);
+        builder.echo(document);
+        builder.out.flush();
+        builder.out.close();
+    }
 
-//        for (int i = 0; i < args.length; i++) {
-//            if (args[i].equals("-dtd"))  {
-//                dtdValidate = true;
-//            }
-//            else if (args[i].equals("-xsd")) {
-//                xsdValidate = true;
-//            }
-//            else if (args[i].equals("-xsdss")) {
-//                if (i == args.length - 1) {
-//                    usage();
-//                }
-//                xsdValidate = true;
-//                schemaSource = args[++i];
-//            }
-//            else {
-//                filename = args[i];
-//                if (i != args.length - 1) {
-//                    usage();
-//                }
-//            }
-//        }
-//
-//        if (filename == null) {
-//            usage();
-//        }
-
+    public Document getDocument(String fileName){
         DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
 
         dbf.setNamespaceAware(true);
-        dbf.setValidating(dtdValidate || xsdValidate);
+        //dbf.setValidating(dtdValidate || xsdValidate);
 
         // ...
+        DocumentBuilder db = null;
+        try {
+           db = dbf.newDocumentBuilder();
+        }catch(ParserConfigurationException e){
+            e.printStackTrace();
+        }
 
-        DocumentBuilder db = dbf.newDocumentBuilder();
-        Document doc = db.parse(new File("src/main/resources/j_caesar.xml"));
-        DOMBuilder builder = new DOMBuilder(new PrintWriter(System.out));
-        builder.echo(doc);
-        builder.out.flush();
-        builder.out.close();
-
+        Document doc = null;
+        try {
+            doc = db.parse(new File("src/main/resources/j_caesar.xml"));
+        }catch(Exception e){
+            e.printStackTrace();
+        }
+        return doc;
     }
 
     private void printlnCommon(Node n) {
@@ -112,7 +93,7 @@ public class DOMBuilder {
         }
     }
 
-    private void echo(Node n) {
+    public void echo(Node n) {
         outputIndentation();
         int type = n.getNodeType();
 
