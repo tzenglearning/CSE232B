@@ -7,6 +7,9 @@ import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.tree.ParseTreeWalker;
 import org.w3c.dom.Document;
 import DOMBuilder.DOMBuilder;
+import org.w3c.dom.Node;
+
+import java.util.List;
 
 //package listener;
 //
@@ -21,7 +24,7 @@ import DOMBuilder.DOMBuilder;
 //
 public class main {
      public static void main(String[] args) {
-         final String expression = "doc(\"j_caesar.xml\")";
+         final String expression = "doc(\"j_caesar.xml\")//ACT";
          final ExpressionGrammarLexer lexer = new ExpressionGrammarLexer(CharStreams.fromString(expression));
          final CommonTokenStream tokens = new CommonTokenStream(lexer);
          final ExpressionGrammarParser parser = new ExpressionGrammarParser(tokens);
@@ -30,12 +33,15 @@ public class main {
          final ExpressionBuilder expressionBuilder = new ExpressionBuilder();
          walker.walk(expressionBuilder, tree);
 
-         Document document = expressionBuilder.getDocument(tree);
-         DOMBuilder domBuilder = new DOMBuilder();
-         domBuilder.echo(document);
-         domBuilder.out.flush();
-         System.out.println("h");
-         domBuilder.out.close();
+         List<Node> document = expressionBuilder.getDocument(tree);
+         for(Node d : document) {
+//             DOMBuilder domBuilder = new DOMBuilder();
+//             domBuilder.echo(d);
+//             domBuilder.out.flush();
+//             System.out.println("h");
+//             domBuilder.out.close();
+             System.out.println(d.getNodeName() + d.getTextContent());
+         }
 
 
     }

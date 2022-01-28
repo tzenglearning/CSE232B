@@ -29,6 +29,8 @@ import edu.ucsd.CSE232B.parsers.ExpressionGrammarParser.ExpContext;
 //import edu.ucsd.CSE232B.antlrTutorial.expression.Variable;
 import org.antlr.v4.runtime.tree.TerminalNode;
 import org.w3c.dom.Document;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 
 public class ExpressionBuilder extends ExpressionGrammarBaseListener {
     private ParseTreeProperty<Object> expressionObjects;
@@ -60,8 +62,8 @@ public class ExpressionBuilder extends ExpressionGrammarBaseListener {
         return expressionObjects.get(obj);
     }
 
-    public Document getDocument(ParseTree tree){
-        return (Document) retrieveObject(tree);
+    public List<Node> getDocument(ParseTree tree){
+        return (List<Node>) retrieveObject(tree);
     }
 
     @Override
@@ -70,30 +72,60 @@ public class ExpressionBuilder extends ExpressionGrammarBaseListener {
 
     @Override
     public void exitProg(ExpressionGrammarParser.ProgContext ctx) {
-        Document document = (Document) retrieveObject(ctx.exp(0));
+        List<Node> document = (List<Node>) retrieveObject(ctx.exp(0));
+        System.out.println(document);
         setObject(ctx, document);
     }
 
     @Override
     public void enterExp(ExpContext ctx) {
+
     }
 
     @Override
     public void exitExp(ExpContext ctx) {
-        Document document = (Document) retrieveObject(ctx.docName());
+        NodeList document = (NodeList) retrieveObject(ctx.rp());
+        List<Node> l = new ArrayList<>();
+        for(int i = 0; i < document.getLength(); i++){
+            l.add((document.item(i)));
+        }
+        setObject(ctx, l);
+    }
+
+    @Override
+    public void enterRp(ExpressionGrammarParser.RpContext ctx) {
+        Document document = (Document) retrieveObject(ctx.getParent());
+        //List<ExpressionGrammarParser.RpContext> rpContext = ctx.rp();
+
         setObject(ctx, document);
     }
 
-    public void enterRp(ExpressionGrammarParser.RpContext ctx) {
-    }
-
+    @Override
     public void exitRp(ExpressionGrammarParser.RpContext ctx) {
+        List<Document> result = new ArrayList<>();
+        Document document = (Document) retrieveObject(ctx);
+        //ExpressionGrammarParser.RpContext rp = rpContext.get(0);
+
+        if (ctx.tagName() != null) {
+            String tagName = (String) retrieveObject(ctx.tagName());
+            //find a list of Document nodes with this tagName
+            System.out.println(tagName);
+            NodeList nl = document.getElementsByTagName(tagName);
+
+            setObject(ctx, nl);
+        }else {
+
+        }
+
+
     }
 
     public void enterTagName(ExpressionGrammarParser.TagNameContext ctx) {
     }
 
+    @Override
     public void exitTagName(ExpressionGrammarParser.TagNameContext ctx) {
+        setObject(ctx, ctx.NAME().toString());
     }
 
     public void enterAttName(ExpressionGrammarParser.AttNameContext ctx) {
@@ -118,7 +150,8 @@ public class ExpressionBuilder extends ExpressionGrammarBaseListener {
         String fileName = (String) retrieveObject(ctx.fileName());
         DOMBuilder dombUilder = new DOMBuilder();
         Document document = dombUilder.getDocument(fileName);
-        setObject(ctx, document);
+        setObject(ctx.getParent(), document);
+
     }
 
     public void enterFileName(ExpressionGrammarParser.FileNameContext ctx) {
