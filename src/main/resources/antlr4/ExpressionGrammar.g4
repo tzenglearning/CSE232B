@@ -8,23 +8,24 @@ package edu.ucsd.CSE232B.parsers;
 prog : (exp)+  EOF;
 
 exp: docName SLASH rp;
-rp:   tagName
-    | AT attName
-    | PATH_SYMBOL
-    | TEXT_FUNC LPR RPR
-    | LPR rp RPR
-    | rp SLASH rp
-    | rp LSQ filter RSQ
-    | rp rp
+rp:   tagName       #Rp_TagName
+    | AT attName    #Rp_AttName
+    | PATH_SYMBOL   #Rp_Pathsymbol
+    | TEXT_FUNC LPR RPR #Rp_Text
+    | LPR rp RPR    #Rp_Paren
+    | rp SLASH rp   #Rp_Slash
+    | rp LSQ filter RSQ #Rp_Filter
+    | rp COMMA rp   #Rp_Comma
     ;
 tagName: NAME;
 attName: NAME;
-filter:  rp
-    | rp EQUAL (rp | STRING)
-    | rp SPEC_EQUAL rp
-    | LPR filter RPR
-    | filter ('and' | 'or') filter
-    | ('not') filter
+filter:  rp                     #Filter_Rp
+    | rp EQUAL (rp | STRING)    #Filter_Eq
+    | rp SPEC_EQUAL rp          #Filter_SpecEq
+    | LPR filter RPR            #Filter_Paren
+    | filter AND filter         #Filter_And
+    | filter OR filter          #Filter_Or
+    | NEGATE filter             #Filter_Not
     ;
 
 // TA provided
@@ -58,6 +59,8 @@ fragment D: [dD];
 fragment O: [oO];
 fragment C: [cC];
 
+
+
 /*Tokens*/
 AT: '@';
 SLASH: ('/' | '//');
@@ -66,15 +69,17 @@ EQUAL: '=';
 
 TEXT_FUNC: 'text';
 
-NAME: [a-zA-Z][a-zA-Z_0-9]*;
 PATH_SYMBOL: ('*' | '.' | '..');
-//AND_OR: ('and' | 'or');
-//NEGATE: 'not';
+AND: 'and';
+OR: 'or';
+NEGATE: 'not';
 LPR: '(';
 RPR: ')';
 LSQ: '[';
 RSQ: ']';
 QUOTE: '"';
+COMMA: ',';
+NAME: [a-zA-Z][a-zA-Z_0-9]*;
 
 //exp:	exp OP exp      #Expr_Binary
 //    |	number          #Expr_Number
