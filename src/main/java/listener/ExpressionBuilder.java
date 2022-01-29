@@ -93,16 +93,13 @@ public class ExpressionBuilder extends ExpressionGrammarBaseListener {
     }
 
     @Override
-    public void enterRp(ExpressionGrammarParser.RpContext ctx) {
+    public void enterRp_TagName(ExpressionGrammarParser.Rp_TagNameContext ctx) {
         Document document = (Document) retrieveObject(ctx.getParent());
-        //List<ExpressionGrammarParser.RpContext> rpContext = ctx.rp();
-
         setObject(ctx, document);
     }
 
     @Override
-    public void exitRp(ExpressionGrammarParser.RpContext ctx) {
-        List<Document> result = new ArrayList<>();
+    public void exitRp_TagName(ExpressionGrammarParser.Rp_TagNameContext ctx) {
         Document document = (Document) retrieveObject(ctx);
         //ExpressionGrammarParser.RpContext rp = rpContext.get(0);
 
@@ -116,9 +113,9 @@ public class ExpressionBuilder extends ExpressionGrammarBaseListener {
         }else {
 
         }
-
-
     }
+
+
 
     public void enterTagName(ExpressionGrammarParser.TagNameContext ctx) {
     }
