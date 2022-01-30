@@ -24,7 +24,7 @@ import java.util.List;
 //
 public class main {
      public static void main(String[] args) {
-         final String expression = "doc(\"j_caesar.xml\")//ACT";
+         final String expression = "doc(\"j_caesar.xml\")//SCENE[SPEECH/SPEAKER/text() = \"CAESAR\"]";
          final ExpressionGrammarLexer lexer = new ExpressionGrammarLexer(CharStreams.fromString(expression));
          final CommonTokenStream tokens = new CommonTokenStream(lexer);
          final ExpressionGrammarParser parser = new ExpressionGrammarParser(tokens);

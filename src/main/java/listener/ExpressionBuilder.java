@@ -1,7 +1,9 @@
 package listener;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import DOMBuilder.DOMBuilder;
 import edu.ucsd.CSE232B.parsers.ExpressionGrammarParser;
@@ -72,7 +74,7 @@ public class ExpressionBuilder extends ExpressionGrammarBaseListener {
 
     @Override
     public void exitProg(ExpressionGrammarParser.ProgContext ctx) {
-        List<Node> document = (List<Node>) retrieveObject(ctx.exp(0));
+        List<Document> document = (List<Document>) retrieveObject(ctx.exp(0));
         System.out.println(document);
         setObject(ctx, document);
     }
@@ -84,35 +86,105 @@ public class ExpressionBuilder extends ExpressionGrammarBaseListener {
 
     @Override
     public void exitExp(ExpContext ctx) {
-        NodeList document = (NodeList) retrieveObject(ctx.rp());
-        List<Node> l = new ArrayList<>();
-        for(int i = 0; i < document.getLength(); i++){
-            l.add((document.item(i)));
-        }
-        setObject(ctx, l);
+        List<Document> documents = (List<Document>) retrieveObject(ctx);
+        setObject(ctx, documents);
     }
 
     @Override
     public void enterRp_TagName(ExpressionGrammarParser.Rp_TagNameContext ctx) {
-        Document document = (Document) retrieveObject(ctx.getParent());
-        setObject(ctx, document);
+        List<Document> nl = (List<Document>) retrieveObject(ctx.getParent());
+        setObject(ctx, nl);
     }
 
     @Override
     public void exitRp_TagName(ExpressionGrammarParser.Rp_TagNameContext ctx) {
-        Document document = (Document) retrieveObject(ctx);
+        List<Document> documents = (List<Document>) retrieveObject(ctx);
         //ExpressionGrammarParser.RpContext rp = rpContext.get(0);
 
-        if (ctx.tagName() != null) {
-            String tagName = (String) retrieveObject(ctx.tagName());
-            //find a list of Document nodes with this tagName
-            System.out.println(tagName);
-            NodeList nl = document.getElementsByTagName(tagName);
+        List<Document> res = new ArrayList<>();
+        for(Document document : documents) {
+            if (ctx.tagName() != null) {
+                String tagName = (String) retrieveObject(ctx.tagName());
+                //find a list of Document nodes with this tagName
+                //System.out.println(tagName);
+                NodeList nl = document.getElementsByTagName(tagName);
 
-            setObject(ctx, nl);
-        }else {
+                for(int i = 0; i < nl.getLength(); i++){
+                    res.add(nl.item(i).getOwnerDocument());
+                }
+                setObject(ctx.getParent(), res);
+            } else {
 
+            }
         }
+    }
+
+    @Override
+    public void enterRp_Filter(ExpressionGrammarParser.Rp_FilterContext ctx) {
+        List<Document> document = (List<Document>) retrieveObject(ctx.getParent());
+        setObject(ctx, document);
+    }
+
+    @Override public void exitRp_Filter(ExpressionGrammarParser.Rp_FilterContext ctx) {
+        List<Document> nl = (List<Document>) retrieveObject(ctx);
+        setObject(ctx.getParent(), nl);
+
+
+    }
+
+    @Override public void enterFilter_Eq(ExpressionGrammarParser.Filter_EqContext ctx) {
+        List<Document> nl = (List<Document>) retrieveObject(ctx.getParent());
+        setObject(ctx, nl);
+
+    }
+    @Override
+    public void exitFilter_Eq(ExpressionGrammarParser.Filter_EqContext ctx) {
+        Map<String, List<Document>> map = (Map<String, List<Document>>) retrieveObject(ctx);
+        String text = ctx.STRING().toString();
+        if(map.containsKey(text)){
+            setObject(ctx.getParent(), map.get(text));
+        }else{
+            List<Document> nl = new ArrayList<>();
+            setObject(ctx.getParent(), nl);
+        }
+
+
+    }
+
+    @Override
+    public void enterRp_Slash(ExpressionGrammarParser.Rp_SlashContext ctx) {
+        List<Document> nl = (List<Document>) retrieveObject(ctx.getParent());
+        setObject(ctx, nl);
+
+    }
+
+    @Override
+    public void exitRp_Slash(ExpressionGrammarParser.Rp_SlashContext ctx) {
+        List<ExpressionGrammarParser.RpContext> rpContextList = ctx.rp();
+        ExpressionGrammarParser.RpContext rp = rpContextList.get(rpContextList.size() - 1);
+        if(rp instanceof ExpressionGrammarParser.Rp_TagNameContext) {
+            List<Document> nl = (List<Document>) retrieveObject(ctx);
+            setObject(ctx.getParent(), nl);
+        }else{//rp instance of Rp_Text
+            Map<String, List<Document>> map = (Map<String, List<Document>>) retrieveObject(ctx);
+            setObject(ctx.getParent(), map);
+        }
+    }
+
+    @Override
+    public void enterRp_Text(ExpressionGrammarParser.Rp_TextContext ctx) {
+
+    }
+
+    @Override
+    public void exitRp_Text(ExpressionGrammarParser.Rp_TextContext ctx) {
+        List<Document> nl = (List<Document>) retrieveObject(ctx.getParent());
+        Map<String, List<Document>> map = new HashMap<>();
+        for(Document n : nl){
+            String str = n.getNodeValue();
+            map.computeIfAbsent(str, k -> new ArrayList<Document>()).add(n);
+        }
+        setObject(ctx.getParent(), map);
     }
 
 
@@ -147,7 +219,10 @@ public class ExpressionBuilder extends ExpressionGrammarBaseListener {
         String fileName = (String) retrieveObject(ctx.fileName());
         DOMBuilder dombUilder = new DOMBuilder();
         Document document = dombUilder.getDocument(fileName);
-        setObject(ctx.getParent(), document);
+        //Document -> List
+        List<Document> l = new ArrayList<>();
+        l.add(document);
+        setObject(ctx.getParent(), l);
 
     }
 
