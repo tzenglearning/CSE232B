@@ -70,8 +70,8 @@ public class ExpressionBuilder extends ExpressionGrammarBaseListener {
     @Override
     public void exitProg(ExpressionGrammarParser.ProgContext ctx) {
         List<Node> document = (List<Node>) retrieveObject(ctx.exp(0));
-        System.out.println("exit prog");
-        System.out.println(document);
+        //System.out.println("exit prog");
+        //System.out.println(document);
         setObject(ctx, document);
     }
 
@@ -97,11 +97,12 @@ public class ExpressionBuilder extends ExpressionGrammarBaseListener {
         List<Node> documents = (List<Node>) retrieveObject(ctx);
         //ExpressionGrammarParser.RpContext rp = rpContext.get(0);
         List<Node> res = new ArrayList<>();
+        Set<Node> set = new HashSet<>();
         for(Node document : documents) {
             if (ctx.tagName() != null) {
                 String tagName = (String) retrieveObject(ctx.tagName());
                 //find a list of Document nodes with this tagName
-                getNodeByTagName(document, tagName, res);
+                getNodeByTagName(document, tagName, set);
                 setObject(ctx, res);
                 if(! (ctx.getParent() instanceof ExpressionGrammarParser.Rp_CommaContext)){
                     setObject(ctx.getParent(), res);
@@ -110,16 +111,18 @@ public class ExpressionBuilder extends ExpressionGrammarBaseListener {
 
             }
         }
+        res.addAll(set);
         System.out.println("Exiting rp tagname");
-        System.out.println(documents);
-        System.out.println(res);
+        System.out.println((String) retrieveObject(ctx.tagName()));
+        System.out.println(documents.size());
+        System.out.println(res.size());
     }
 
     @Override
     public void enterRp_Pathsymbol(ExpressionGrammarParser.Rp_PathsymbolContext ctx) {
         List<Node> document = (List<Node>) retrieveObject((ctx.getParent()));
         System.out.println("Enter rp_path Symbol");
-        System.out.println(document);
+        //System.out.println(document);
         setObject(ctx, document);
     }
 
@@ -128,7 +131,7 @@ public class ExpressionBuilder extends ExpressionGrammarBaseListener {
         List<Node> document = (List<Node>) retrieveObject(ctx);
         String pathSymbol = ctx.PATH_SYMBOL().toString();
         System.out.println("Exit path symbol");
-        System.out.println(document);
+        System.out.println(document.size());
         List<Node> result = new ArrayList<>();
         if(pathSymbol.equals("*")){
             for(Node d: document){
@@ -137,10 +140,10 @@ public class ExpressionBuilder extends ExpressionGrammarBaseListener {
                      result.add(child);
                 }
             }
-            System.out.println(result);
+            System.out.println(result.size());
             setObject(ctx, result);
         }else if(pathSymbol.equals(".")){
-            System.out.println(document);
+            System.out.println(document.size());
             setObject(ctx, document);
         }else{//..
 
@@ -149,7 +152,7 @@ public class ExpressionBuilder extends ExpressionGrammarBaseListener {
                     result.add(d.getParentNode());
                 }
             }
-            System.out.println(result);
+            System.out.println(result.size());
             setObject(ctx, result);
         }
     }
@@ -241,14 +244,19 @@ public class ExpressionBuilder extends ExpressionGrammarBaseListener {
         System.out.println(documents);
         System.out.println(subElements);
 
+        //for subelements
         for(Node document : documents){
-            if(!subElements.contains(document)){
-                good.add(document);
+            for(Node node : set) {
+                if (isChildren(node, document)) {
+                    good.add(document);
+                    break;
+                }
             }
         }
+        documents.removeAll(good);
 
-        System.out.println(good);
-        setObject(ctx, good);
+        System.out.println(documents);
+        setObject(ctx, documents);
 
     }
     @Override
@@ -315,8 +323,6 @@ public class ExpressionBuilder extends ExpressionGrammarBaseListener {
 
             //good
             List<Node> good = new ArrayList<>();
-
-
 
             for(Node d : document){
                 for(Node n: okElements){
@@ -403,10 +409,12 @@ public class ExpressionBuilder extends ExpressionGrammarBaseListener {
     public void exitFilter_SpecEq(ExpressionGrammarParser.Filter_SpecEqContext ctx) {
         List<Node> document = (List<Node>) retrieveObject(ctx.getParent());
         System.out.println("exiting filter ==");
-        System.out.println(document.size());
+
         List<ExpressionGrammarParser.RpContext> rpContextList = ctx.rp();
         List<Node> rp0 = (List<Node>) retrieveObject(ctx.rp(0));
         List<Node> rp1 = (List<Node>) retrieveObject(ctx.rp(1));
+        System.out.println(rp0);
+        System.out.println(rp1);
 
         //if for every element rp0 = rp1 return rp0
         boolean everyElement1 = false;
@@ -421,6 +429,7 @@ public class ExpressionBuilder extends ExpressionGrammarBaseListener {
 
         if(set0.size() == 0 && set1.size() == 0){
             setObject(ctx, rp0);
+            System.out.println(rp0.size());
         }else{
             setObject(ctx, new ArrayList<Node>());
         }
@@ -463,6 +472,7 @@ public class ExpressionBuilder extends ExpressionGrammarBaseListener {
                 result.add(n);
             }
         }
+        //System.out.println(result);
 
         boolean r1Parent = ctx.rp(1) instanceof ExpressionGrammarParser.Rp_PathsymbolContext && ((ExpressionGrammarParser.Rp_PathsymbolContext) ctx.rp(1)).PATH_SYMBOL().toString().equals("..");
         if(ctx.SLASH().toString().equals("/") && !r1Parent){
@@ -482,11 +492,15 @@ public class ExpressionBuilder extends ExpressionGrammarBaseListener {
 
         }
 
-        System.out.println(node0);
-        System.out.println(node1);
-        System.out.println(result);
+        System.out.println(node0.size());
+        System.out.println(node1.size());
+        System.out.println(result.size());
         setObject(ctx, result);
-        setObject(ctx.getParent(), result);
+        ParserRuleContext parent = ctx.getParent();
+
+        if(!(parent instanceof  ExpressionGrammarParser.Rp_CommaContext)
+
+           && !(parent instanceof ExpressionGrammarParser.Filter_SpecEqContext)) setObject(ctx.getParent(), result);
 
     }
 
@@ -544,12 +558,18 @@ public class ExpressionBuilder extends ExpressionGrammarBaseListener {
         final ExpressionGrammarParser.FileNameContext filectx = ctx.fileName();
         String fileName = (String) retrieveObject(ctx.fileName());
         DOMBuilder dombUilder = new DOMBuilder();
+        //document node
         Document document = dombUilder.getDocument(fileName);
-        //Document -> List
-        List<Node> l = new ArrayList<>();
-        l.add(document);
-        setObject(ctx.getParent(), l);
-
+        List<Node> result = new ArrayList<>();
+        ExpressionGrammarParser.ExpContext exp =  (ExpressionGrammarParser.ExpContext) ctx.getParent();
+        if(exp.SLASH().toString().equals("//")){//return all nodes that are part of document
+            Set<Node> set = new HashSet<>();
+            getAllNodes(document, set);
+            result.addAll(set);
+        }else {
+            result.add(document);
+        }
+        setObject(ctx.getParent(), result);
     }
 
     public void enterFileName(ExpressionGrammarParser.FileNameContext ctx) {
@@ -627,7 +647,7 @@ public class ExpressionBuilder extends ExpressionGrammarBaseListener {
         }
         return false;
     }
-    public void getNodeByTagName(Node n, String tagName, List<Node> res) {
+    public void getNodeByTagName(Node n, String tagName, Set<Node> res) {
         String name = n.getNodeName();
 
         if(name.equals(tagName)){
@@ -640,6 +660,17 @@ public class ExpressionBuilder extends ExpressionGrammarBaseListener {
         }
     }
 
+    private void getAllNodes(Node n, Set<Node> result){
+        if(n == null){
+            return;
+        }
+
+        result.add(n);
+        for (Node child = n.getFirstChild(); child != null;
+             child = child.getNextSibling()) {
+            getAllNodes(child, result);
+        }
+    }
     private boolean isDirectChildren(Node n0, Node n1){
         if(n0.isSameNode(n1)) return true;
         for (Node child = n1.getFirstChild(); child != null;
