@@ -25,16 +25,7 @@ import java.util.List;
 public class main {
      public static void main(String[] args) throws Exception {
          String filename = "Input_Query.txt";
-         File inputQueryFile = new File(filename);
-         if(inputQueryFile.createNewFile()){
-             System.out.println("File " + filename + " created in Project root directory");
-         }else System.out.println("File " + filename + " already exists in the project root directory");
-
-         String expression = "doc(\"j_caesar.xml\")//(ACT,PERSONAE)/TITLE/text()/../../TITLE[not((./ACT)and(./ACT))]/.././PERSONA/./..";
-//                 Files.readString(Path.of(filename));
-//                 "doc(\"j_caesar.xml\")\u200B/PLAY/ACT[not(SCENE=ACT)]/TITLE/.";
-
-//         System.out.println("Expression to be tested: " + expression);
+         String expression = Files.readString(Path.of(filename));
          String output_filename = "Query_Results.xml";
          test(expression, output_filename);
 
