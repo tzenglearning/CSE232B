@@ -2,13 +2,11 @@ package listener;
 
 import edu.ucsd.CSE232B.parsers.ExpressionGrammarLexer;
 import edu.ucsd.CSE232B.parsers.ExpressionGrammarParser;
-import listener.ExpressionBuilder;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.tree.ParseTreeWalker;
 import org.w3c.dom.Document;
-import DOMBuilder.DOMBuilder;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 
@@ -24,7 +22,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 
-public class main {
+public class Main {
      public static void main(String[] args) throws Exception {
          String filename = "Input_Query.txt";
          String expression = Files.readString(Path.of(filename));
