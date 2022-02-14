@@ -5,7 +5,7 @@ package edu.ucsd.CSE232B.parsers;
 }
 
 /*Rules*/
-prog : (exp)+  EOF;
+prog : (xq | exp)+  EOF;
 
 exp: docName SLASH rp;
 rp:   tagName       #Rp_TagName
@@ -28,9 +28,52 @@ filter:  rp                     #Filter_Rp
     | NEGATE filter             #Filter_Not
     ;
 
-// TA provided
-docName: DOC LPR fileName RPR;
+xq:   var         #XQ_VAR
+    | stringConst #XQ_STRING
+    | exp         #XQ_EXP
+    | LPR xq RPR  #XQ_PR
+    | xq COMMA xq #XQ_COMMA
+    | xq SLASH rp #XQ_SLASH
+    | LAB tagName RAB LCB xq RCB LAB SLASH tagName RAB #XQ_TAGNAME
+    | forClause letClause whereClause returnClause #XQ_FOR
+    | letClause COMMA xq #XQ_LET
+    ;
 
+forClause: FOR items;
+
+items:  item COMMA items #ITEM_MULTIPLE
+    | item #ITEM_ONE
+    ;
+
+item: var IN xq;
+
+letClause: LET definition #LET_DEF
+           |  #LET_NONE
+           ;
+
+definitions: definition COMMA definitions #DEF_MUTIPLE
+           | definition #DEF_ONE
+           ;
+
+definition: var DEFINEEQ xq;
+
+whereClause: WHERE cond #WHERE_CONDITION
+             | #WHERE_NONE
+             ;
+returnClause: RETURN xq;
+cond : xq EQUAL xq
+       | xq SPEC_EQUAL xq
+       | EMPTY LPR xq RPR
+       | SOME items SATISFIES cond
+       | LPR cond RPR
+       | cond AND cond
+       | cond OR cond
+       | NEGATE cond;
+
+// TA provided
+docName: (DOC | DOCUMENT) LPR fileName RPR;
+
+var : DOLLAR NAME;
 fileName: STRING;
 stringConst: STRING;
 
@@ -58,10 +101,12 @@ DOC: D O C;
 fragment D: [dD];
 fragment O: [oO];
 fragment C: [cC];
+DOCUMENT: 'document';
 
 
 
 /*Tokens*/
+DOLLAR: '$';
 AT: '@';
 SLASH: ('/' | '//');
 SPEC_EQUAL: ('eq' | '==' | 'is');
@@ -75,11 +120,25 @@ OR: 'or';
 NEGATE: 'not';
 LPR: '(';
 RPR: ')';
+LAB : '<';
+RAB : '>';
+LCB : '{';
+RCB : '}';
 LSQ: '[';
 RSQ: ']';
 QUOTE: '"';
 COMMA: ',';
+FOR : 'for';
+IN : 'in';
+LET: 'let';
+DEFINEEQ: ':=';
+WHERE: 'where';
+RETURN: 'return';
+EMPTY: 'empty';
+SOME: 'some';
+SATISFIES: 'satisfies';
 NAME: [a-zA-Z][a-zA-Z_0-9]*;
+
 
 //exp:	exp OP exp      #Expr_Binary
 //    |	number          #Expr_Number
