@@ -57,7 +57,9 @@ public class ExpressionBuilder extends ExpressionGrammarBaseVisitor<DataContext>
         System.out.println("visit " + ctx.getClass().getName());
         DataContext curr = pass(ctx);
         System.out.println(curr);
-        this.visit(ctx.docName());
+        DataContext d = this.visit(ctx.docName());
+        d.data = reform(d.data, ctx.SLASH().toString());
+        dataContext.put(ctx, d);
         DataContext result = this.visit(ctx.rp());
         System.out.println("Exiting " + ctx.getClass().getName());
         System.out.println(result.map);
@@ -79,11 +81,22 @@ public class ExpressionBuilder extends ExpressionGrammarBaseVisitor<DataContext>
             dataContext.put(ctx.getParent(), curr);
             return curr;
         }else if(path.equals("..")){
+
             Set<Node> l = new HashSet<>();
             for(Node n : curr.data){
                 l.add(n.getParentNode());
             }
-            DataContext result = new DataContext(new ArrayList<>(l), curr.map);
+
+            Set<Node> l2 = new HashSet<>();
+            if(needGoBackByTwoLevel(ctx)){
+                for(Node n: l){
+                    l2.add(n.getParentNode());
+                }
+            }else{
+                l2.addAll(l);
+            }
+
+            DataContext result = new DataContext(new ArrayList<>(l2), curr.map);
             dataContext.put(ctx.getParent(), result);
             return result;
         }else{
@@ -110,11 +123,12 @@ public class ExpressionBuilder extends ExpressionGrammarBaseVisitor<DataContext>
     public DataContext visitRp_Slash(ExpressionGrammarParser.Rp_SlashContext ctx) {
         System.out.println("visit " + ctx.getClass().getName());
         DataContext dc = pass(ctx);
-        dc.data = reform(dc, ctx);
-        System.out.println(dc.data.size());
-
 
         DataContext dc1 = this.visit(ctx.rp(0));
+        dc1.data = reform(dc1.data, ctx.SLASH().toString());
+        System.out.println(dc1.data.size());
+
+        dataContext.put(ctx, dc1);
         DataContext dc2 = this.visit(ctx.rp(1));
         System.out.println("Exiting: " + ctx.getClass().getName());
 
@@ -122,14 +136,15 @@ public class ExpressionBuilder extends ExpressionGrammarBaseVisitor<DataContext>
         return dc2;
     }
 
-    private List<Node> reform(DataContext dc, ParserRuleContext ctx) {
-        if (isParentSlash(ctx, "//")){
+    private List<Node> reform(List<Node> data, String slash) {
+        if (slash.equals("//")){
             System.out.println("h");
-            return populate(dc.data);
-        }else if(isParentSlash(ctx, "/")){
+            List<Node> l = populate(data);
+            return l;
+        }else{
             System.out.println("2");
             Set<Node> result = new HashSet<>();
-            for(Node node : dc.data){
+            for(Node node : data){
                 NodeList nodeList = node.getChildNodes();
 
                 for(int i = 0; i < nodeList.getLength(); i++){
@@ -137,9 +152,6 @@ public class ExpressionBuilder extends ExpressionGrammarBaseVisitor<DataContext>
                 }
             }
             return new ArrayList<>(result);
-        }else{
-            System.out.println("4");
-            return dc.data;
         }
     }
 
@@ -165,7 +177,6 @@ public class ExpressionBuilder extends ExpressionGrammarBaseVisitor<DataContext>
         DataContext dc = pass(ctx);
         System.out.println(dc.map);
         System.out.println(dc.data.size());
-        dc.data = reform(dc, ctx);
         System.out.println("Data " + String.valueOf(dc.data.size()));
 
         List<Node> nodeList = dc.data;
@@ -192,13 +203,9 @@ public class ExpressionBuilder extends ExpressionGrammarBaseVisitor<DataContext>
     @Override
     public DataContext visitRp_Text(ExpressionGrammarParser.Rp_TextContext ctx) {
         System.out.println("visit " + ctx.getClass().getName());
+        //assume the path is correct
         DataContext dc = pass(ctx);
 
-        List<Node> node = new ArrayList<>();
-        for(Node n : dc.data){
-            node.add(n.getFirstChild());
-        }
-        dc.data = node;
         dataContext.put(ctx.getParent(), dc.clone());
         System.out.println("Exiting: " + ctx.getClass().getName());
         System.out.println(dc.toString());
@@ -288,6 +295,9 @@ public class ExpressionBuilder extends ExpressionGrammarBaseVisitor<DataContext>
         System.out.println(dc.map);
 
         DataContext xq = this.visit(ctx.xq());
+        xq.data = reform(xq.data, ctx.SLASH().toString());
+
+        dataContext.put(ctx, xq);
         dataContext.put(ctx.getParent(), this.visit(ctx.rp()));
         System.out.println("Exiting " + ctx.getClass().getName());
         System.out.println(dataContext.get(ctx.getParent()).data);
@@ -299,7 +309,7 @@ public class ExpressionBuilder extends ExpressionGrammarBaseVisitor<DataContext>
     public DataContext visitXQ_LET(ExpressionGrammarParser.XQ_LETContext ctx) {
         DataContext curr = pass(ctx);
 
-        DataContext dc = this.visit(ctx.xq());
+        DataContext dc = this.visit(ctx.definition());
 
         dataContext.put(ctx.getParent(), dc.clone());
         return dataContext.get(ctx.getParent());
@@ -322,6 +332,7 @@ public class ExpressionBuilder extends ExpressionGrammarBaseVisitor<DataContext>
         DataContext dc = dataContext.get(ctx.getParent());
         if(dc == null){
             dataContext.put(ctx, new DataContext(null));
+            dc = dataContext.get(ctx);
         }else{
             dataContext.put(ctx, dc);
         }
@@ -569,11 +580,13 @@ public class ExpressionBuilder extends ExpressionGrammarBaseVisitor<DataContext>
         //for map is with all kind of combinations
         Map<String, List<Node>> originalMap = curr.map;
         List<Map<String, List<Node>>> filter = new ArrayList<>();
+        List<Map<String, List<Node>>> originalP = curr.possibilities;
 
 
         System.out.println(curr.data);
-        for(Map<String, List<Node>> entry : curr.possibilities){
+        for(Map<String, List<Node>> entry : originalP){
             curr.map = entry;
+            curr.possibilities = Arrays.asList(entry);
             dataContext.put(ctx, curr);
             DataContext dc = this.visit(ctx.cond());
 
@@ -583,6 +596,7 @@ public class ExpressionBuilder extends ExpressionGrammarBaseVisitor<DataContext>
         }
         System.out.println("Exiting Where_Condition");
         curr.map = originalMap;
+
         curr.possibilities = filter;
         dataContext.put(ctx.getParent(), curr.clone());
 
@@ -601,11 +615,9 @@ public class ExpressionBuilder extends ExpressionGrammarBaseVisitor<DataContext>
          */
         System.out.println("visit " + ctx.getClass().getName());
         DataContext curr = pass(ctx);
-        System.out.println(curr.map);
-        List<String> keys = new ArrayList<>(curr.map.keySet());
-        Map<String, List<Node>> map = new HashMap<>();
-        getAllCombinations(keys, curr.map, 0, map);
-        return null;
+
+        dataContext.put(ctx.getParent(), curr);
+        return curr;
     }
 
     @Override
@@ -621,10 +633,12 @@ public class ExpressionBuilder extends ExpressionGrammarBaseVisitor<DataContext>
         DataContext curr = pass(ctx);
 
         Map<String, List<Node>> oldMap = curr.map;
+        List<Map<String, List<Node>>> originalP = curr.possibilities;
 
 
-        for(Map<String, List<Node>> entry : curr.possibilities){
+        for(Map<String, List<Node>> entry : originalP){
             curr.map = entry;
+            curr.possibilities = Arrays.asList(entry);
             dataContext.put(ctx, curr);
             DataContext dc2 = this.visit(ctx.xq());
             dc.data.addAll(dc2.data);
@@ -632,7 +646,7 @@ public class ExpressionBuilder extends ExpressionGrammarBaseVisitor<DataContext>
 
         System.out.println("Exiting: " + ctx.getClass().getName());
         dc.map = oldMap;
-        dc.possibilities = curr.possibilities;
+        dc.possibilities = originalP;
         System.out.println(dc.data);
         return dc;
     }
@@ -676,6 +690,7 @@ public class ExpressionBuilder extends ExpressionGrammarBaseVisitor<DataContext>
     public DataContext visitCOND_EMPTY(ExpressionGrammarParser.COND_EMPTYContext ctx) {
         DataContext curr = pass(ctx);
         DataContext dc = this.visit(ctx.xq());
+        dc.ok = dc.data.size() == 0;
         return  new DataContext(dc.ok);
     }
 
@@ -864,7 +879,10 @@ public class ExpressionBuilder extends ExpressionGrammarBaseVisitor<DataContext>
         Set<Node> res = new HashSet<>();
         for(Node n : nl) {
             Set<Node> result = new HashSet<>();
-            getAllNodes(n, result);
+            for (Node child = n.getFirstChild(); child != null;
+                 child = child.getNextSibling()) {
+                getAllNodes(child, result);
+            }
             res.addAll(result);
         }
 
@@ -903,6 +921,32 @@ public class ExpressionBuilder extends ExpressionGrammarBaseVisitor<DataContext>
         for (Node child = n1.getFirstChild(); child != null;
              child = child.getNextSibling()) {
             if(isChildren(n0, child)) return true;
+        }
+        return false;
+    }
+
+    private boolean needGoBackByTwoLevel(ExpressionGrammarParser.Rp_PathsymbolContext ctx){
+        ParserRuleContext curr = ctx;
+        while(curr != null) {
+            ParserRuleContext parent = curr.getParent();
+            if (parent instanceof ExpressionGrammarParser.Rp_SlashContext) {
+                String str = ((ExpressionGrammarParser.Rp_SlashContext) parent).SLASH().toString();
+                if (str.equals("//")) {
+                    return false;
+                } else {
+                    return true;
+                }
+
+            } else if (parent instanceof ExpressionGrammarParser.XQ_SLASHContext) {
+                String str = ((ExpressionGrammarParser.XQ_SLASHContext) parent).SLASH().toString();
+                if (str.equals("//")) {
+                    return false;
+                } else {
+                    return true;
+                }
+            } else {
+                curr = parent;
+            }
         }
         return false;
     }
