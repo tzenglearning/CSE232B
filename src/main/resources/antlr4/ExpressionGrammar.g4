@@ -61,14 +61,15 @@ whereClause: WHERE cond #WHERE_CONDITION
              | #WHERE_NONE
              ;
 returnClause: RETURN xq;
-cond : xq EQUAL xq
-       | xq SPEC_EQUAL xq
-       | EMPTY LPR xq RPR
-       | SOME items SATISFIES cond
-       | LPR cond RPR
-       | cond AND cond
-       | cond OR cond
-       | NEGATE cond;
+cond : xq EQUAL xq    #COND_EQUAL
+       | xq SPEC_EQUAL xq #COND_SPEQUAL
+       | EMPTY LPR xq RPR #COND_EMPTY
+       | SOME items SATISFIES cond #COND_SATISFY
+       | LPR cond RPR #COND_PR
+       | cond AND cond #COND_AND
+       | cond OR cond #COND_OR
+       | NEGATE cond  #COND_NEGATE
+       ;
 
 // TA provided
 docName: (DOC | DOCUMENT) LPR fileName RPR;
