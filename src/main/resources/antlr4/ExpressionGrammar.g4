@@ -36,7 +36,7 @@ xq:   var         #XQ_VAR
     | xq COMMA xq #XQ_COMMA
     | LAB tagName RAB LCB xq RCB LAB SLASH tagName RAB #XQ_TAGNAME
     | forClause letClause whereClause returnClause #XQ_FOR
-    | LET definition #XQ_LET
+    | LET definitions #XQ_LET
     ;
 
 forClause: FOR items;
@@ -47,7 +47,7 @@ items:  item COMMA items #ITEM_MULTIPLE
 
 item: var IN xq;
 
-letClause: LET definition #LET_DEF
+letClause: LET definitions #LET_DEF
            |  #LET_NONE
            ;
 

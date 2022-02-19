@@ -50,6 +50,12 @@ public class DataContext {
         this.possibilities = new ArrayList<>(list);
     }
 
+    public DataContext(Map<String, List<Node>> map, List<Map<String, List<Node>>> list){
+        this.data  = new ArrayList<>();
+        this.map = new HashMap<>(map);
+        this.possibilities = new ArrayList<>(list);
+    }
+
     public DataContext clone(){
         return new DataContext(this.data, this.map, this.name, this.ok, this.possibilities);
     }

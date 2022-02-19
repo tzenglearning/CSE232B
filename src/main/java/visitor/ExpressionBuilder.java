@@ -70,7 +70,10 @@ public class ExpressionBuilder extends ExpressionGrammarBaseVisitor<DataContext>
 
     @Override
     public DataContext visitRp_Paren(ExpressionGrammarParser.Rp_ParenContext ctx) {
-        return this.visitChildren(ctx);
+        DataContext curr = pass(ctx);
+        DataContext  dc = this.visit(ctx.rp());
+        dataContext.put(ctx.getParent(), curr.clone());
+        return dataContext.get(ctx.getParent());
     }
 
     @Override
@@ -309,7 +312,7 @@ public class ExpressionBuilder extends ExpressionGrammarBaseVisitor<DataContext>
     public DataContext visitXQ_LET(ExpressionGrammarParser.XQ_LETContext ctx) {
         DataContext curr = pass(ctx);
 
-        DataContext dc = this.visit(ctx.definition());
+        DataContext dc = this.visit(ctx.definitions());
 
         dataContext.put(ctx.getParent(), dc.clone());
         return dataContext.get(ctx.getParent());
@@ -529,9 +532,9 @@ public class ExpressionBuilder extends ExpressionGrammarBaseVisitor<DataContext>
         return dataContext.get(ctx.getParent());
     }
 
-    private void getAllCombinations(List<String> key, Map<String, List<Node>> map, int i, Map<String, List<Node>> cur){
+    private void getAllCombinations(List<String> key, Map<String, List<Node>> map, int i, Map<String, List<Node>> cur, List<Map<String, List<Node>>> result){
         if(i == key.size()){
-            //forMap.add(new HashMap<String, List<Node>>(cur));
+            result.add(new HashMap<String, List<Node>>(cur));
             return;
         }
 
@@ -541,7 +544,7 @@ public class ExpressionBuilder extends ExpressionGrammarBaseVisitor<DataContext>
             List<Node> tmp = new ArrayList<>();
             tmp.add(nl.get(j));
             cur.put(key.get(i), tmp);
-            getAllCombinations(key, map, i + 1, cur);
+            getAllCombinations(key, map, i + 1, cur, result);
             cur.remove(key.get(i));
         }
     }
@@ -549,9 +552,9 @@ public class ExpressionBuilder extends ExpressionGrammarBaseVisitor<DataContext>
     @Override
     public DataContext visitLET_DEF(ExpressionGrammarParser.LET_DEFContext ctx) {
         DataContext curr = pass(ctx);
-        DataContext dc = this.visit(ctx.definition());
+        DataContext dc = this.visit(ctx.definitions());
 
-        dataContext.put(ctx, dc.clone());
+        dataContext.put(ctx.getParent(), dc.clone());
         return dataContext.get(ctx);
     }
 
@@ -559,19 +562,122 @@ public class ExpressionBuilder extends ExpressionGrammarBaseVisitor<DataContext>
     public DataContext visitLET_NONE(ExpressionGrammarParser.LET_NONEContext ctx) {
         return null;
     }
-//
-//    public T visitDEF_MUTIPLE(ExpressionGrammarParser.DEF_MUTIPLEContext ctx) {
-//        return this.visitChildren(ctx);
-//    }
-//
-//    public T visitDEF_ONE(ExpressionGrammarParser.DEF_ONEContext ctx) {
-//        return this.visitChildren(ctx);
-//    }
-//
-//    public T visitDefinition(ExpressionGrammarParser.DefinitionContext ctx) {
-//        return this.visitChildren(ctx);
-//    }
-//
+
+    @Override
+    public DataContext visitDEF_MUTIPLE(ExpressionGrammarParser.DEF_MUTIPLEContext ctx) {
+        DataContext curr = pass(ctx);
+
+        Map <String, List<Node>> originalM = curr.map;//a1
+        List<Map<String, List<Node>>> originalP = curr.possibilities;//{a1}
+        Set<Map<String, List<Node>>> result = new HashSet<>();//{}
+
+
+        for(Map<String, List<Node>> entry : originalP){
+            curr.map = entry;//a1
+            curr.possibilities = Arrays.asList(entry);//{a1}
+            dataContext.put(ctx, curr);
+            DataContext dc = this.visit(ctx.definition());//{b12} {a1b1, a1b2}
+
+            //new map from dc b = [1, 2]
+            DataContext data = new DataContext(null);
+
+
+
+            //new possibilities from definition
+            List<Map<String, List<Node>>> newP = new ArrayList<>(dc.possibilities);//{a1b1, b2}
+
+            //a1 b12 {a1b1 a1b2}
+            data.map = new HashMap<>(dc.map);
+            data.possibilities = new ArrayList<>(newP);
+
+            //a1b1
+            //a1b2
+            for(Map<String, List<Node>> possibility : data.possibilities){
+                dataContext.put(ctx, new DataContext(possibility, Arrays.asList(possibility)));
+                //a1b1
+                //a2b1
+                //a1b2
+                //a2b2
+                DataContext dc2 = this.visit(ctx.definitions());
+                originalM = dc2.map;
+                result.addAll(dc2.possibilities);
+            }
+        }
+
+        DataContext data = new DataContext(originalM, new ArrayList<>(result));
+        return data;
+
+    }
+
+    @Override
+    public DataContext visitDEF_ONE(ExpressionGrammarParser.DEF_ONEContext ctx) {
+        DataContext curr = pass(ctx);
+
+        if(ctx.getParent() instanceof ExpressionGrammarParser.LET_DEFContext){
+            //do the job as def_multiple
+            Map <String, List<Node>> originalM = curr.map;//a1
+            List<Map<String, List<Node>>> originalP = curr.possibilities;//{a1}
+            Set<Map<String, List<Node>>> result = new HashSet<>();//{}
+
+
+            for(Map<String, List<Node>> entry : originalP){
+                curr.map = entry;//a1
+                curr.possibilities = Arrays.asList(entry);//{a1}
+                dataContext.put(ctx, curr);
+                DataContext dc = this.visit(ctx.definition());//{b12} {a1b1, a1b2}
+
+                //new map from dc b = [1, 2]
+                DataContext data = new DataContext(null);
+
+
+
+                //new possibilities from definition
+                List<Map<String, List<Node>>> newP = new ArrayList<>(dc.possibilities);//{a1b1, b2}
+
+                //a1 b12 {a1b1 a1b2}
+                data.map = new HashMap<>(dc.map);
+                data.possibilities = new ArrayList<>(newP);
+
+                originalM = data.map;
+                result.addAll(data.possibilities);
+            }
+
+            DataContext data = new DataContext(originalM, new ArrayList<>(result));
+            return data;
+
+        }else {
+            return this.visit(ctx.definition());
+        }
+    }
+
+    @Override
+    public DataContext visitDefinition(ExpressionGrammarParser.DefinitionContext ctx) {
+        //copy c:{a12b1} p:{a1b1}
+        DataContext curr = pass(ctx);
+
+        //a
+        DataContext dc = this.visit(ctx.var());
+        //a12
+        DataContext dc2 = this.visit(ctx.xq());
+
+        //update c
+        curr.map.put(dc.name, dc2.data);
+
+        //update p
+        List<Map<String, List<Node>>> l = new ArrayList<>();
+        Map<String, List<Node>> t = new HashMap<>();
+        getAllCombinations(new ArrayList<>(curr.map.keySet()), new HashMap<>(curr.map), 0,  t, l);
+
+        curr.possibilities = l;
+
+
+        //return curr
+        dataContext.put(ctx.getParent(), curr.clone());
+        System.out.println("exiting item");
+        System.out.println(dataContext.get(ctx.getParent()).toString());
+        return dataContext.get(ctx.getParent());
+    }
+
     @Override
     public DataContext visitWHERE_CONDITION(ExpressionGrammarParser.WHERE_CONDITIONContext ctx) {
         System.out.println("visit " + ctx.getClass().getName());
@@ -634,6 +740,7 @@ public class ExpressionBuilder extends ExpressionGrammarBaseVisitor<DataContext>
 
         Map<String, List<Node>> oldMap = curr.map;
         List<Map<String, List<Node>>> originalP = curr.possibilities;
+        Set<Node> result = new HashSet<>();
 
 
         for(Map<String, List<Node>> entry : originalP){
@@ -641,8 +748,9 @@ public class ExpressionBuilder extends ExpressionGrammarBaseVisitor<DataContext>
             curr.possibilities = Arrays.asList(entry);
             dataContext.put(ctx, curr);
             DataContext dc2 = this.visit(ctx.xq());
-            dc.data.addAll(dc2.data);
+            result.addAll(dc2.data);
         }
+        dc.data = new ArrayList<>(result);
 
         System.out.println("Exiting: " + ctx.getClass().getName());
         dc.map = oldMap;
