@@ -26,7 +26,7 @@ import java.util.List;
 public class main {
     static Document document;
     public static void main(String[] args) throws Exception {
-        String filename = "Input_Query.txt";
+        String filename = args[0];
         String expression = Files.readString(Path.of(filename));
         String output_filename = "Query_Results.xml";
         test(expression, output_filename);

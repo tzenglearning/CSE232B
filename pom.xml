@@ -67,7 +67,7 @@
                             <archive>
                                 <manifest>
                                     <mainClass>
-                                        listener.Main
+                                        visitor.main
                                         <!-- Your Main Class. Example: edu.ucsd.cse232.Main, where "edu.ucsd.cse232" is a package
                                         and "Main" is the name of the main class -->
                                     </mainClass>

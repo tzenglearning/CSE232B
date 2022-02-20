@@ -48,7 +48,7 @@ public class DOMBuilder {
 
         Document doc = null;
         try {
-            doc = db.parse(new File("src/main/resources/j_caesar.xml"));
+            doc = db.parse(new File(fileName));
         }catch(Exception e){
             e.printStackTrace();
         }

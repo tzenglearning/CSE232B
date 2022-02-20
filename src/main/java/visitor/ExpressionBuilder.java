@@ -982,7 +982,7 @@ public class ExpressionBuilder extends ExpressionGrammarBaseVisitor<DataContext>
 
         DOMBuilder dombUilder = new DOMBuilder();
         //create document node
-        this.document = dombUilder.getDocument(fileName.name);
+        this.document = dombUilder.getDocument(fileName.name.replaceAll("\"", ""));
 
         List<Node> result = new ArrayList<>();
         result.add(document);
