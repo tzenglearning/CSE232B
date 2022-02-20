@@ -110,8 +110,8 @@ DOCUMENT: 'document';
 DOLLAR: '$';
 AT: '@';
 SLASH: ('/' | '//');
-SPEC_EQUAL: ('eq' | '==' | 'is');
-EQUAL: '=';
+SPEC_EQUAL: ('==' | 'is');
+EQUAL: ('eq' | '=');
 
 TEXT_FUNC: 'text';
 

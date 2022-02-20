@@ -72,7 +72,7 @@ public class ExpressionBuilder extends ExpressionGrammarBaseVisitor<DataContext>
     public DataContext visitRp_Paren(ExpressionGrammarParser.Rp_ParenContext ctx) {
         DataContext curr = pass(ctx);
         DataContext  dc = this.visit(ctx.rp());
-        dataContext.put(ctx.getParent(), curr.clone());
+        dataContext.put(ctx.getParent(), dc.clone());
         return dataContext.get(ctx.getParent());
     }
 
@@ -81,7 +81,16 @@ public class ExpressionBuilder extends ExpressionGrammarBaseVisitor<DataContext>
         DataContext curr = pass(ctx);
         String path = ctx.PATH_SYMBOL().toString();
         if(path.equals(".")){
+            if(needGoBackByTwoLevel(ctx)){
+                Set<Node> l = new HashSet<>();
+                for(Node n: curr.data){
+                    l.add(n.getParentNode());
+                }
+                curr.data = new ArrayList<>(l);
+            }else{
+            }
             dataContext.put(ctx.getParent(), curr);
+
             return curr;
         }else if(path.equals("..")){
 
@@ -103,25 +112,41 @@ public class ExpressionBuilder extends ExpressionGrammarBaseVisitor<DataContext>
             dataContext.put(ctx.getParent(), result);
             return result;
         }else{
-            Set<Node> l = new HashSet<>();
-            for(Node n : curr.data){
-                NodeList nodeList = n.getChildNodes();
-                for(int i = 0; i < nodeList.getLength(); i++){
-                    l.add(nodeList.item(i));
-                }
-
-            }
-            DataContext result = new DataContext(new ArrayList<>(l), curr.map);
-            dataContext.put(ctx.getParent(), result);
-            return result;
+            dataContext.put(ctx.getParent(), curr);
+            return dataContext.get(ctx.getParent());
 
         }
     }
-//
-//    public T visitRp_Filter(ExpressionGrammarParser.Rp_FilterContext ctx) {
-//        return this.visitChildren(ctx);
-//    }
-//
+
+    public DataContext visitRp_Filter(ExpressionGrammarParser.Rp_FilterContext ctx) {
+        DataContext curr = pass(ctx);
+
+        DataContext dc = this.visit(ctx.rp());
+        List<Node> originalL = dc.data;
+        Set<Node> filter = new HashSet<>();
+
+        for(Node n : originalL) {
+
+            Set<Node> l = new HashSet<>();
+            NodeList nodeList = n.getChildNodes();
+            for (int i = 0; i < nodeList.getLength(); i++) {
+                l.add(nodeList.item(i));
+            }
+
+            dc.data = new ArrayList<>(l);
+            dataContext.put(ctx, dc);
+            DataContext dc2 = this.visit(ctx.filter());
+
+            if(dc2.ok){
+                filter.add(n);
+            }
+        }
+
+       dc.data = new ArrayList<>(filter);
+       dataContext.put(ctx.getParent(), dc);
+       return dataContext.get(ctx.getParent());
+    }
+
     @Override
     public DataContext visitRp_Slash(ExpressionGrammarParser.Rp_SlashContext ctx) {
         System.out.println("visit " + ctx.getClass().getName());
@@ -214,10 +239,17 @@ public class ExpressionBuilder extends ExpressionGrammarBaseVisitor<DataContext>
         System.out.println(dc.toString());
         return dataContext.get(ctx.getParent());
     }
-//
-//    public T visitRp_Comma(ExpressionGrammarParser.Rp_CommaContext ctx) {
-//        return this.visitChildren(ctx);
-//    }
+
+    @Override
+    public DataContext visitRp_Comma(ExpressionGrammarParser.Rp_CommaContext ctx) {
+        DataContext curr = pass(ctx);
+        DataContext dc = this.visit(ctx.rp(0));
+        dataContext.put(ctx, curr);
+        DataContext dc2 = this.visit(ctx.rp(1));
+        dc.data.addAll(dc2.data);
+        dataContext.put(ctx.getParent(), dc.clone());
+        return dataContext.get(ctx.getParent());
+    }
 
     @Override
     public DataContext visitTagName(ExpressionGrammarParser.TagNameContext ctx) {
@@ -231,34 +263,103 @@ public class ExpressionBuilder extends ExpressionGrammarBaseVisitor<DataContext>
 //        return this.visitChildren(ctx);
 //    }
 //
-//    public T visitFilter_Or(ExpressionGrammarParser.Filter_OrContext ctx) {
-//        return this.visitChildren(ctx);
-//    }
-//
-//    public T visitFilter_And(ExpressionGrammarParser.Filter_AndContext ctx) {
-//        return this.visitChildren(ctx);
-//    }
-//
-//    public T visitFilter_Not(ExpressionGrammarParser.Filter_NotContext ctx) {
-//        return this.visitChildren(ctx);
-//    }
-//
-//    public T visitFilter_Eq(ExpressionGrammarParser.Filter_EqContext ctx) {
-//        return this.visitChildren(ctx);
-//    }
-//
-//    public T visitFilter_SpecEq(ExpressionGrammarParser.Filter_SpecEqContext ctx) {
-//        return this.visitChildren(ctx);
-//    }
-//
-//    public T visitFilter_Rp(ExpressionGrammarParser.Filter_RpContext ctx) {
-//        return this.visitChildren(ctx);
-//    }
-//
-//    public T visitFilter_Paren(ExpressionGrammarParser.Filter_ParenContext ctx) {
-//        return this.visitChildren(ctx);
-//    }
-//
+    @Override
+    public DataContext visitFilter_Or(ExpressionGrammarParser.Filter_OrContext ctx) {
+        DataContext curr = pass(ctx);
+
+        dataContext.put(ctx, curr);
+        DataContext dc = this.visit(ctx.filter(0));
+        dataContext.put(ctx, curr);
+        DataContext dc2 = this.visit(ctx.filter(1));
+        return new DataContext(dc.ok || dc2.ok);
+    }
+    @Override
+    public DataContext visitFilter_And(ExpressionGrammarParser.Filter_AndContext ctx) {
+        DataContext curr = pass(ctx);
+
+        dataContext.put(ctx, curr);
+        DataContext dc = this.visit(ctx.filter(0));
+        dataContext.put(ctx, curr);
+        DataContext dc2 = this.visit(ctx.filter(1));
+        return new DataContext(dc.ok && dc2.ok);
+    }
+
+
+    @Override
+    public DataContext visitFilter_Not(ExpressionGrammarParser.Filter_NotContext ctx) {
+        DataContext curr = pass(ctx);
+        DataContext dc = this.visit(ctx.filter());
+        return new DataContext(!dc.ok);
+    }
+
+    public DataContext visitFilter_Eq(ExpressionGrammarParser.Filter_EqContext ctx) {
+        DataContext curr = pass(ctx);
+        if(ctx.rp().size() == 2) {
+            dataContext.put(ctx, curr);
+            DataContext dc = this.visit(ctx.rp(0));
+            dataContext.put(ctx,curr);
+            DataContext dc2 = this.visit(ctx.rp(1));
+
+            for (Node n1 : dc.data) {
+                for (Node n2 : dc2.data) {
+                    if (n1.isSameNode(n2)) {
+                        return new DataContext(true);
+                    }
+                }
+            }
+            return new DataContext(false);
+        }else{
+            dataContext.put(ctx, curr);
+            DataContext dc = this.visit(ctx.rp(0));
+            for (Node n1 : dc.data) {
+                if (n1.getNodeValue().equals(ctx.STRING().toString().replaceAll("\"", ""))) {
+                        return new DataContext(true);
+                }
+            }
+
+            return new DataContext(false);
+        }
+    }
+
+
+    public DataContext visitFilter_SpecEq(ExpressionGrammarParser.Filter_SpecEqContext ctx) {
+        DataContext curr = pass(ctx);
+
+        dataContext.put(ctx, curr);
+        DataContext dc = this.visit(ctx.rp(0));
+        dataContext.put(ctx,curr);
+        DataContext dc2 = this.visit(ctx.rp(1));
+
+        for(Node n1 : dc.data){
+            for(Node n2 : dc2.data){
+                if(n1.isEqualNode(n2)){
+                    return new DataContext(true);
+                }
+            }
+        }
+
+        return new DataContext(false);
+    }
+
+    @Override
+    public DataContext visitFilter_Rp(ExpressionGrammarParser.Filter_RpContext ctx) {
+        DataContext curr = pass(ctx);
+        dataContext.put(ctx, curr);
+        DataContext dc = this.visit(ctx.rp());
+        if(dc.data.size() > 0){
+            return new DataContext(true);
+        }else{
+            return new DataContext(false);
+        }
+    }
+
+    public DataContext visitFilter_Paren(ExpressionGrammarParser.Filter_ParenContext ctx) {
+        DataContext curr = pass(ctx);
+        DataContext dc = this.visit(ctx.filter());
+
+        return dc;
+    }
+
     @Override
     public DataContext visitXQ_PR(ExpressionGrammarParser.XQ_PRContext ctx) {
         DataContext dc = pass(ctx);
@@ -374,6 +475,7 @@ public class ExpressionBuilder extends ExpressionGrammarBaseVisitor<DataContext>
         System.out.println("visit " + ctx.getClass().getName());
         DataContext curr = pass(ctx);
         DataContext xq = this.visit(ctx.xq(0));
+        dataContext.put(ctx, curr);
         DataContext xq2 = this.visit(ctx.xq(1));
         xq.data.addAll(xq2.data);
 
