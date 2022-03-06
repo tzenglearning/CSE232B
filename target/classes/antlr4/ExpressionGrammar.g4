@@ -5,7 +5,7 @@ package edu.ucsd.CSE232B.parsers;
 }
 
 /*Rules*/
-prog : (exp)+  EOF;
+prog : (xq | exp)+  EOF;
 
 exp: docName SLASH rp;
 rp:   tagName       #Rp_TagName
@@ -28,9 +28,58 @@ filter:  rp                     #Filter_Rp
     | NEGATE filter             #Filter_Not
     ;
 
-// TA provided
-docName: DOC LPR fileName RPR;
+xq:   var         #XQ_VAR
+    | stringConst #XQ_STRING
+    | exp         #XQ_EXP
+    | LPR xq RPR  #XQ_PR
+    | xq SLASH rp #XQ_SLASH
+    | xq COMMA xq #XQ_COMMA
+    | LAB tagName RAB LCB xq RCB LAB SLASH tagName RAB #XQ_TAGNAME
+    | forClause letClause whereClause returnClause #XQ_FOR
+    | LET definitions #XQ_LET
+    | JOIN LPR xq COMMA xq COMMA LSQ namelist RSQ COMMA LSQ  namelist RSQ RPR #XQ_JOIN
+    ;
 
+namelist: NAME COMMA namelist  #NAME_MULTIPLE
+          |NAME #NAME_ONE
+          |     #NAME_EPSILON
+         ;
+forClause: FOR items;
+
+items:  item COMMA items #ITEM_MULTIPLE
+    | item #ITEM_ONE
+    ;
+
+item: var IN xq;
+
+letClause: LET definitions #LET_DEF
+           |  #LET_NONE
+           ;
+
+definitions: definition COMMA definitions #DEF_MUTIPLE
+           | definition #DEF_ONE
+           ;
+
+definition: var DEFINEEQ xq;
+
+whereClause: WHERE cond #WHERE_CONDITION
+             | #WHERE_NONE
+             ;
+returnClause: RETURN xq;
+cond : xq EQUAL xq    #COND_EQUAL
+       | xq SPEC_EQUAL xq #COND_SPEQUAL
+       | EMPTY LPR xq RPR #COND_EMPTY
+       | SOME items SATISFIES cond #COND_SATISFY
+       | LPR cond RPR #COND_PR
+       | cond AND cond #COND_AND
+       | cond OR cond #COND_OR
+       | NEGATE cond  #COND_NEGATE
+       ;
+
+// TA provided
+docName: (DOC | DOCUMENT) LPR fileName RPR;
+
+var : DOLLAR NAME;
 fileName: STRING;
 stringConst: STRING;
 
@@ -58,14 +107,16 @@ DOC: D O C;
 fragment D: [dD];
 fragment O: [oO];
 fragment C: [cC];
+DOCUMENT: 'document';
 
 
 
 /*Tokens*/
+DOLLAR: '$';
 AT: '@';
 SLASH: ('/' | '//');
-SPEC_EQUAL: ('eq' | '==' | 'is');
-EQUAL: '=';
+SPEC_EQUAL: ('==' | 'is');
+EQUAL: ('eq' | '=');
 
 TEXT_FUNC: 'text';
 
@@ -75,11 +126,26 @@ OR: 'or';
 NEGATE: 'not';
 LPR: '(';
 RPR: ')';
+LAB : '<';
+RAB : '>';
+LCB : '{';
+RCB : '}';
 LSQ: '[';
 RSQ: ']';
 QUOTE: '"';
 COMMA: ',';
+FOR : 'for';
+IN : 'in';
+LET: 'let';
+DEFINEEQ: ':=';
+WHERE: 'where';
+RETURN: 'return';
+EMPTY: 'empty';
+SOME: 'some';
+SATISFIES: 'satisfies';
+JOIN: 'join';
 NAME: [a-zA-Z][a-zA-Z_0-9]*;
+
 
 //exp:	exp OP exp      #Expr_Binary
 //    |	number          #Expr_Number

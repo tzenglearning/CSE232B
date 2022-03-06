@@ -37,8 +37,13 @@ xq:   var         #XQ_VAR
     | LAB tagName RAB LCB xq RCB LAB SLASH tagName RAB #XQ_TAGNAME
     | forClause letClause whereClause returnClause #XQ_FOR
     | LET definitions #XQ_LET
+    | JOIN LPR xq COMMA xq COMMA LSQ namelist RSQ COMMA LSQ  namelist RSQ RPR #XQ_JOIN
     ;
 
+namelist: NAME COMMA namelist  #NAME_MULTIPLE
+          |NAME #NAME_ONE
+          |     #NAME_EPSILON
+         ;
 forClause: FOR items;
 
 items:  item COMMA items #ITEM_MULTIPLE
@@ -138,6 +143,7 @@ RETURN: 'return';
 EMPTY: 'empty';
 SOME: 'some';
 SATISFIES: 'satisfies';
+JOIN: 'join';
 NAME: [a-zA-Z][a-zA-Z_0-9]*;
 
 

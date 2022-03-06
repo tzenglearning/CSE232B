@@ -1,3 +1,12 @@
-<acts> { for $a in doc("j_caesar.xml")//ACT\n where not empty ( for $sp in $a/SCENE/SPEECH\n where
-($sp/SPEAKER/text() = "FLAVIUS" and $sp/../TITLE/text()="SCENE I.  Rome. A street.") return
-<speaker> {\n $sp/text() }\n</speaker> ) return <act>{$a/TITLE/text()}</act> }</acts>
+for $act in doc("j_caesar.xml")//ACT,
+$title in $act/SCENE/TITLE,
+$speaker1 in $act//SPEAKER/text(),
+$speaker2 in $act//SPEAKER/text()
+where $title eq "SCENE I.  Rome. A street."
+return <tuple>{
+<act>{$act}</act>,
+<title>{$title}</title>,
+<speaker1>{$speaker1}</speaker1>,
+<speaker2>{$speaker2}</speaker2>
+}</tuple>
+

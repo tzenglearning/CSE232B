@@ -26,7 +26,7 @@ import java.util.List;
 public class main {
     static Document document;
     public static void main(String[] args) throws Exception {
-        String filename = args[0];
+        String filename = "Input_Query.txt";
         String expression = Files.readString(Path.of(filename));
         String output_filename = "Query_Results.xml";
         test(expression, output_filename);
@@ -84,15 +84,29 @@ public class main {
         final ExpressionGrammarParser parser = new ExpressionGrammarParser(tokens);
         final ParserRuleContext tree = parser.prog();
         final ProgramBuilder programBuilder = new ProgramBuilder();
-        final DataContext dataContext = programBuilder.visit(tree);
+        final Rewriter rewriter = new Rewriter();
+        String result = rewriter.visit(tree);
+        PrintWriter printWriter = new PrintWriter("rewritten_query.txt");
+        printWriter.println(result);
+        printWriter.flush();
+
+
+
+
+        final ExpressionGrammarLexer newlexer = new ExpressionGrammarLexer(CharStreams.fromString(result));
+        final CommonTokenStream newtokens = new CommonTokenStream(newlexer);
+        final ExpressionGrammarParser newparser = new ExpressionGrammarParser(newtokens);
+        final ParserRuleContext tree2 = newparser.prog();
+
+        final DataContext dataContext = programBuilder.visit(tree2);
         System.out.println(dataContext);
-
-
-        // Debugging
+//
+//
+//        // Debugging
         List<Node> resultNodes = dataContext.data;
-        System.out.println("Result: " + resultNodes.size());
-        System.out.println(resultNodes);
-
+//        System.out.println("Result: " + resultNodes.size());
+//        System.out.println(resultNodes);
+//
         for(Node d : resultNodes) {
             // Have to import d into the newly created output xml document
             Node d_copy = document.importNode(d, true);

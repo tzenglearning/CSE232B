@@ -11,6 +11,7 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
 import javax.xml.crypto.Data;
+import java.lang.reflect.Array;
 import java.util.*;
 
 //
@@ -368,6 +369,62 @@ public class ExpressionBuilder extends ExpressionGrammarBaseVisitor<DataContext>
     }
 
     @Override
+    public DataContext visitXQ_JOIN(ExpressionGrammarParser.XQ_JOINContext ctx){
+        DataContext curr = pass(ctx);
+        DataContext dc = this.visit(ctx.xq(0));
+        DataContext dc2 = this.visit(ctx.xq(1));
+        DataContext dc4 = this.visit(ctx.namelist(0));
+        DataContext dc8 = this.visit(ctx.namelist(1));
+        String[] nameList = dc4.name.split(",");
+        String[] nameList2 =dc8.name.split(",");
+        List<Map<String, List<Node>>> newList = new ArrayList<>();
+
+        for(int i = 0; i < dc.data.size(); i++){
+            Map<String, List<Node>> map = getMapFromTuple(dc.data.get(i));
+            for(int j = 0; j < dc2.data.size(); j++){
+                Map<String, List<Node>> map2 = getMapFromTuple(dc2.data.get(j));
+
+                boolean ok = true;
+                for(int k = 0; k < nameList.length; k++){
+                    String name = nameList[k];
+                    String name2 = nameList2[k];
+                    if(!map.get(name).get(0).isEqualNode(map2.get(name2).get(0))){
+                        ok =false;
+                        break;
+                    }
+                }
+                if(ok){
+                    Map<String, List<Node>> result = new HashMap<>(map);
+                    result.putAll(map2);
+                    newList.add(result);
+                }
+            }
+        }
+
+        Set<Node> result = new HashSet<>();
+        for(Map<String, List<Node>> p : newList){
+            Node n = document.createElement("tuple");
+            for (Map.Entry<String, List<Node>> e : p.entrySet()) {
+                Node varNode = document.createElement(e.getKey());
+                for(Node node : e.getValue()) {
+                    Node n2 = document.importNode(node.cloneNode(true), true);
+                    varNode.appendChild(n2);
+                }
+                n.appendChild(varNode);
+            }
+            result.add(n);
+        }
+        return new DataContext(new ArrayList<>(result), new HashMap<>(), null, false, newList);
+    }
+
+    public Map<String, List<Node>> getMapFromTuple(Node n){
+        Map<String, List<Node>> map = new HashMap<>();
+        for(Node child = n.getFirstChild(); child != null; child = child.getNextSibling()){
+            map.put(child.getNodeName(), Arrays.asList(child.getFirstChild()));
+        }
+        return map;
+    }
+    @Override
     public DataContext visitXQ_TAGNAME(ExpressionGrammarParser.XQ_TAGNAMEContext ctx) {
         System.out.println("visit " + ctx.getClass().getName());
         DataContext curr = pass(ctx);
@@ -477,9 +534,13 @@ public class ExpressionBuilder extends ExpressionGrammarBaseVisitor<DataContext>
         DataContext xq = this.visit(ctx.xq(0));
         dataContext.put(ctx, curr);
         DataContext xq2 = this.visit(ctx.xq(1));
-        xq.data.addAll(xq2.data);
+        List<Node> res = new ArrayList<>(xq.data);
+        for(Node n : xq2.data){
+            res.add(n);
+        }
 
-        dataContext.put(ctx.getParent(), new DataContext(xq.data, curr.map));
+
+        dataContext.put(ctx.getParent(), new DataContext(res, curr.map));
         System.out.println("exiting " + ctx.getClass().getName());
         return dataContext.get(ctx.getParent());
     }
@@ -998,6 +1059,22 @@ public class ExpressionBuilder extends ExpressionGrammarBaseVisitor<DataContext>
         return new DataContext(ctx.NAME().toString());
     }
 
+    @Override
+    public DataContext visitNAME_MULTIPLE(ExpressionGrammarParser.NAME_MULTIPLEContext ctx){
+        DataContext curr = pass(ctx);
+
+        DataContext dc = this.visit(ctx.namelist());
+        curr.name = ctx.NAME() + "," + dc.name;
+
+        return curr;
+    }
+
+    @Override
+    public DataContext visitNAME_ONE(ExpressionGrammarParser.NAME_ONEContext ctx){
+        DataContext curr = pass(ctx);
+        curr.name =  ctx.NAME().toString();
+        return curr;
+    }
     @Override
     public DataContext visitFileName(ExpressionGrammarParser.FileNameContext ctx) {
         System.out.println("visit " + ctx.getClass().getName());

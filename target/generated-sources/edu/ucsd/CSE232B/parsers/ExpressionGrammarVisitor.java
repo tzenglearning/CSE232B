@@ -142,11 +142,237 @@ public interface ExpressionGrammarVisitor<T> extends ParseTreeVisitor<T> {
 	 */
 	T visitFilter_Paren(ExpressionGrammarParser.Filter_ParenContext ctx);
 	/**
+	 * Visit a parse tree produced by the {@code XQ_PR}
+	 * labeled alternative in {@link ExpressionGrammarParser#xq}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitXQ_PR(ExpressionGrammarParser.XQ_PRContext ctx);
+	/**
+	 * Visit a parse tree produced by the {@code XQ_TAGNAME}
+	 * labeled alternative in {@link ExpressionGrammarParser#xq}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitXQ_TAGNAME(ExpressionGrammarParser.XQ_TAGNAMEContext ctx);
+	/**
+	 * Visit a parse tree produced by the {@code XQ_SLASH}
+	 * labeled alternative in {@link ExpressionGrammarParser#xq}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitXQ_SLASH(ExpressionGrammarParser.XQ_SLASHContext ctx);
+	/**
+	 * Visit a parse tree produced by the {@code XQ_LET}
+	 * labeled alternative in {@link ExpressionGrammarParser#xq}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitXQ_LET(ExpressionGrammarParser.XQ_LETContext ctx);
+	/**
+	 * Visit a parse tree produced by the {@code XQ_STRING}
+	 * labeled alternative in {@link ExpressionGrammarParser#xq}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitXQ_STRING(ExpressionGrammarParser.XQ_STRINGContext ctx);
+	/**
+	 * Visit a parse tree produced by the {@code XQ_JOIN}
+	 * labeled alternative in {@link ExpressionGrammarParser#xq}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitXQ_JOIN(ExpressionGrammarParser.XQ_JOINContext ctx);
+	/**
+	 * Visit a parse tree produced by the {@code XQ_EXP}
+	 * labeled alternative in {@link ExpressionGrammarParser#xq}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitXQ_EXP(ExpressionGrammarParser.XQ_EXPContext ctx);
+	/**
+	 * Visit a parse tree produced by the {@code XQ_VAR}
+	 * labeled alternative in {@link ExpressionGrammarParser#xq}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitXQ_VAR(ExpressionGrammarParser.XQ_VARContext ctx);
+	/**
+	 * Visit a parse tree produced by the {@code XQ_COMMA}
+	 * labeled alternative in {@link ExpressionGrammarParser#xq}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitXQ_COMMA(ExpressionGrammarParser.XQ_COMMAContext ctx);
+	/**
+	 * Visit a parse tree produced by the {@code XQ_FOR}
+	 * labeled alternative in {@link ExpressionGrammarParser#xq}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitXQ_FOR(ExpressionGrammarParser.XQ_FORContext ctx);
+	/**
+	 * Visit a parse tree produced by the {@code NAME_MULTIPLE}
+	 * labeled alternative in {@link ExpressionGrammarParser#namelist}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitNAME_MULTIPLE(ExpressionGrammarParser.NAME_MULTIPLEContext ctx);
+	/**
+	 * Visit a parse tree produced by the {@code NAME_ONE}
+	 * labeled alternative in {@link ExpressionGrammarParser#namelist}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitNAME_ONE(ExpressionGrammarParser.NAME_ONEContext ctx);
+	/**
+	 * Visit a parse tree produced by {@link ExpressionGrammarParser#forClause}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitForClause(ExpressionGrammarParser.ForClauseContext ctx);
+	/**
+	 * Visit a parse tree produced by the {@code ITEM_MULTIPLE}
+	 * labeled alternative in {@link ExpressionGrammarParser#items}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitITEM_MULTIPLE(ExpressionGrammarParser.ITEM_MULTIPLEContext ctx);
+	/**
+	 * Visit a parse tree produced by the {@code ITEM_ONE}
+	 * labeled alternative in {@link ExpressionGrammarParser#items}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitITEM_ONE(ExpressionGrammarParser.ITEM_ONEContext ctx);
+	/**
+	 * Visit a parse tree produced by {@link ExpressionGrammarParser#item}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitItem(ExpressionGrammarParser.ItemContext ctx);
+	/**
+	 * Visit a parse tree produced by the {@code LET_DEF}
+	 * labeled alternative in {@link ExpressionGrammarParser#letClause}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitLET_DEF(ExpressionGrammarParser.LET_DEFContext ctx);
+	/**
+	 * Visit a parse tree produced by the {@code LET_NONE}
+	 * labeled alternative in {@link ExpressionGrammarParser#letClause}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitLET_NONE(ExpressionGrammarParser.LET_NONEContext ctx);
+	/**
+	 * Visit a parse tree produced by the {@code DEF_MUTIPLE}
+	 * labeled alternative in {@link ExpressionGrammarParser#definitions}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitDEF_MUTIPLE(ExpressionGrammarParser.DEF_MUTIPLEContext ctx);
+	/**
+	 * Visit a parse tree produced by the {@code DEF_ONE}
+	 * labeled alternative in {@link ExpressionGrammarParser#definitions}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitDEF_ONE(ExpressionGrammarParser.DEF_ONEContext ctx);
+	/**
+	 * Visit a parse tree produced by {@link ExpressionGrammarParser#definition}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitDefinition(ExpressionGrammarParser.DefinitionContext ctx);
+	/**
+	 * Visit a parse tree produced by the {@code WHERE_CONDITION}
+	 * labeled alternative in {@link ExpressionGrammarParser#whereClause}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitWHERE_CONDITION(ExpressionGrammarParser.WHERE_CONDITIONContext ctx);
+	/**
+	 * Visit a parse tree produced by the {@code WHERE_NONE}
+	 * labeled alternative in {@link ExpressionGrammarParser#whereClause}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitWHERE_NONE(ExpressionGrammarParser.WHERE_NONEContext ctx);
+	/**
+	 * Visit a parse tree produced by {@link ExpressionGrammarParser#returnClause}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitReturnClause(ExpressionGrammarParser.ReturnClauseContext ctx);
+	/**
+	 * Visit a parse tree produced by the {@code COND_SPEQUAL}
+	 * labeled alternative in {@link ExpressionGrammarParser#cond}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitCOND_SPEQUAL(ExpressionGrammarParser.COND_SPEQUALContext ctx);
+	/**
+	 * Visit a parse tree produced by the {@code COND_PR}
+	 * labeled alternative in {@link ExpressionGrammarParser#cond}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitCOND_PR(ExpressionGrammarParser.COND_PRContext ctx);
+	/**
+	 * Visit a parse tree produced by the {@code COND_AND}
+	 * labeled alternative in {@link ExpressionGrammarParser#cond}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitCOND_AND(ExpressionGrammarParser.COND_ANDContext ctx);
+	/**
+	 * Visit a parse tree produced by the {@code COND_EMPTY}
+	 * labeled alternative in {@link ExpressionGrammarParser#cond}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitCOND_EMPTY(ExpressionGrammarParser.COND_EMPTYContext ctx);
+	/**
+	 * Visit a parse tree produced by the {@code COND_SATISFY}
+	 * labeled alternative in {@link ExpressionGrammarParser#cond}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitCOND_SATISFY(ExpressionGrammarParser.COND_SATISFYContext ctx);
+	/**
+	 * Visit a parse tree produced by the {@code COND_NEGATE}
+	 * labeled alternative in {@link ExpressionGrammarParser#cond}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitCOND_NEGATE(ExpressionGrammarParser.COND_NEGATEContext ctx);
+	/**
+	 * Visit a parse tree produced by the {@code COND_OR}
+	 * labeled alternative in {@link ExpressionGrammarParser#cond}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitCOND_OR(ExpressionGrammarParser.COND_ORContext ctx);
+	/**
+	 * Visit a parse tree produced by the {@code COND_EQUAL}
+	 * labeled alternative in {@link ExpressionGrammarParser#cond}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitCOND_EQUAL(ExpressionGrammarParser.COND_EQUALContext ctx);
+	/**
 	 * Visit a parse tree produced by {@link ExpressionGrammarParser#docName}.
 	 * @param ctx the parse tree
 	 * @return the visitor result
 	 */
 	T visitDocName(ExpressionGrammarParser.DocNameContext ctx);
+	/**
+	 * Visit a parse tree produced by {@link ExpressionGrammarParser#var}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitVar(ExpressionGrammarParser.VarContext ctx);
 	/**
 	 * Visit a parse tree produced by {@link ExpressionGrammarParser#fileName}.
 	 * @param ctx the parse tree
