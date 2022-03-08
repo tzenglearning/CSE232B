@@ -23,6 +23,8 @@ public class Rewriter extends ExpressionGrammarBaseVisitor<String> {
     int cnt;
     List<String> parent;
     Map<String, Integer> inDegree;
+    Map<Integer, Set<Integer>> link;
+    Map<String, Integer> from;
 
     public Rewriter(){
         this.map = new HashMap<>();
@@ -35,25 +37,26 @@ public class Rewriter extends ExpressionGrammarBaseVisitor<String> {
         this.cnt = 0;
         this.parent = new ArrayList<>();
         this.inDegree = new HashMap<>();
+        this.link = new HashMap<>();
+        this.from = new HashMap<>();
     }
     @Override
     public String visitProg(ExpressionGrammarParser.ProgContext ctx) {
-        System.out.println("visit " + ctx.getClass().getName());
+//        System.out.println("visit " + ctx.getClass().getName());
         String res = null;
         if(ctx.xq() == null){
             res= this.visit(ctx.exp(0));
         }else{
             res = this.visit(ctx.xq(0));
         }
-        System.out.println(map);
-        System.out.println(kv);
-        System.out.println(returnSyntax);
-        System.out.println(whereMap);
-        System.out.println(result);
+//        System.out.println(map);
+//        System.out.println(kv);
+//        System.out.println(returnSyntax);
+//        System.out.println(whereMap);
+//        System.out.println(result);
 
         int num = getNumOfGraphComponents();
         if(num > 1){
-            System.out.println(group);
             return generateJoinSyntax();
         }else{
             return res;
@@ -64,7 +67,7 @@ public class Rewriter extends ExpressionGrammarBaseVisitor<String> {
 
     @Override
     public String visitExp(ExpressionGrammarParser.ExpContext ctx) {
-        System.out.println("visit " + ctx.getClass().getName());
+        //System.out.println("visit " + ctx.getClass().getName());
 
         String docName = this.visit(ctx.docName());
         String rp = this.visit(ctx.rp());
@@ -83,13 +86,13 @@ public class Rewriter extends ExpressionGrammarBaseVisitor<String> {
 
     @Override
     public String visitRp_Slash(ExpressionGrammarParser.Rp_SlashContext ctx) {
-        System.out.println("visit " + ctx.getClass().getName());
+        //System.out.println("visit " + ctx.getClass().getName());
         return this.visit(ctx.rp(0)) + ctx.SLASH().toString() + this.visit(ctx.rp(1));
     }
 
     @Override
     public String visitRp_TagName(ExpressionGrammarParser.Rp_TagNameContext ctx) {
-        System.out.println("visit " + ctx.getClass().getName());
+        //System.out.println("visit " + ctx.getClass().getName());
         return this.visit(ctx.tagName());
     }
 
@@ -99,7 +102,7 @@ public class Rewriter extends ExpressionGrammarBaseVisitor<String> {
 //
     @Override
     public String visitRp_Text(ExpressionGrammarParser.Rp_TextContext ctx) {
-        System.out.println("visit " + ctx.getClass().getName());
+        //System.out.println("visit " + ctx.getClass().getName());
         return "text()";
     }
 
@@ -110,7 +113,7 @@ public class Rewriter extends ExpressionGrammarBaseVisitor<String> {
 
     @Override
     public String visitTagName(ExpressionGrammarParser.TagNameContext ctx) {
-        System.out.println("visit " + ctx.getClass().getName());
+        //System.out.println("visit " + ctx.getClass().getName());
         return ctx.NAME().toString();
     }
 
@@ -126,7 +129,7 @@ public class Rewriter extends ExpressionGrammarBaseVisitor<String> {
 
     @Override
     public String visitXQ_TAGNAME(ExpressionGrammarParser.XQ_TAGNAMEContext ctx) {
-        System.out.println("visit " + ctx.getClass().getName());
+        //System.out.println("visit " + ctx.getClass().getName());
         String tagName = this.visit(ctx.tagName(0));
         String xq = this.visit(ctx.xq());
 
@@ -136,7 +139,7 @@ public class Rewriter extends ExpressionGrammarBaseVisitor<String> {
     //
     @Override
     public String visitXQ_SLASH(ExpressionGrammarParser.XQ_SLASHContext ctx) {
-        System.out.println("Visiting " + ctx.getClass().getName());
+        //System.out.println("Visiting " + ctx.getClass().getName());
         String xq = this.visit(ctx.xq());
         String rp = this.visit(ctx.rp());
         return xq + ctx.SLASH().toString() + rp;
@@ -145,26 +148,43 @@ public class Rewriter extends ExpressionGrammarBaseVisitor<String> {
     }
 
     @Override
+    public String visitXQ_JOIN(ExpressionGrammarParser.XQ_JOINContext ctx){
+        return "join( " + this.visit(ctx.xq(0))
+                + ","  + this.visit(ctx.xq(1))
+                + "[" + ctx.namelist(0) + "] , [" + ctx.namelist(1) + "]) ";
+    }
+
+    @Override
+    public String visitNAME_MULTIPLE(ExpressionGrammarParser.NAME_MULTIPLEContext ctx){
+       return ctx.NAME().toString() + "," + this.visit(ctx.namelist());
+    }
+
+    @Override
+    public String visitNAME_ONE(ExpressionGrammarParser.NAME_ONEContext ctx){
+        return ctx.NAME().toString();
+    }
+
+    @Override
     public String visitXQ_STRING(ExpressionGrammarParser.XQ_STRINGContext ctx) {
-        System.out.println("visit " + ctx.getClass().getName());
+        //System.out.println("visit " + ctx.getClass().getName());
         return this.visit(ctx.stringConst());
     }
 
     @Override
     public String visitXQ_EXP(ExpressionGrammarParser.XQ_EXPContext ctx) {
-        System.out.println("visit " + ctx.getClass().getName());
+        //System.out.println("visit " + ctx.getClass().getName());
         return this.visit(ctx.exp());
     }
 
     @Override
     public String visitXQ_VAR(ExpressionGrammarParser.XQ_VARContext ctx) {
-        System.out.println("visit " + ctx.getClass().getName());
+        //System.out.println("visit " + ctx.getClass().getName());
         return this.visit(ctx.var());
     }
 
     @Override
     public String visitXQ_COMMA(ExpressionGrammarParser.XQ_COMMAContext ctx) {
-        System.out.println("visit " + ctx.getClass().getName());
+        //System.out.println("visit " + ctx.getClass().getName());
         String xq = this.visit(ctx.xq(0));
         String xq2 = this.visit(ctx.xq(1));
         return xq + "," + xq2;
@@ -178,7 +198,7 @@ public class Rewriter extends ExpressionGrammarBaseVisitor<String> {
 
     @Override
     public String visitForClause(ExpressionGrammarParser.ForClauseContext ctx) {
-        System.out.println("visit " + ctx.getClass().getName());
+        //System.out.println("visit " + ctx.getClass().getName());
 
         //build map during visit items
         return "for " + this.visit(ctx.items()) + "\n";
@@ -186,24 +206,31 @@ public class Rewriter extends ExpressionGrammarBaseVisitor<String> {
 
     @Override
     public String visitITEM_MULTIPLE(ExpressionGrammarParser.ITEM_MULTIPLEContext ctx) {
-        System.out.println("visit " + ctx.getClass().getName());
+        //System.out.println("visit " + ctx.getClass().getName());
 
         return this.visit(ctx.item()) + ", \n" + this.visit(ctx.items());
     }
 
     @Override
     public String visitITEM_ONE(ExpressionGrammarParser.ITEM_ONEContext ctx) {
-        System.out.println("visit " + ctx.getClass().getName());
+        //System.out.println("visit " + ctx.getClass().getName());
         return this.visit(ctx.item());
     }
 
     @Override
     public String visitItem(ExpressionGrammarParser.ItemContext ctx) {
-        System.out.println("visit " + ctx.getClass().getName());
+        //System.out.println("visit " + ctx.getClass().getName());
 
 
         String varName = this.visit(ctx.var());
         String xq = this.visit(ctx.xq());
+        if(varName == null){
+            System.out.println(varName);
+        }
+
+        if(xq == null) {
+            System.out.println(varName);
+        }
 
         String name = getVarName(varName);
         String name2 = getVarName(xq);
@@ -235,7 +262,7 @@ public class Rewriter extends ExpressionGrammarBaseVisitor<String> {
            $Y : [y1, y2]
          */
 
-        System.out.println("visit " + ctx.getClass().getName());
+        //System.out.println("visit " + ctx.getClass().getName());
 
         returnSyntax = this.visit(ctx.xq());
 
@@ -286,7 +313,7 @@ public class Rewriter extends ExpressionGrammarBaseVisitor<String> {
 
     @Override
     public String visitDocName(ExpressionGrammarParser.DocNameContext ctx) {
-        System.out.println("visit " + ctx.getClass().getName());
+        //System.out.println("visit " + ctx.getClass().getName());
         //get filename
         String name = this.visit(ctx.fileName());
 
@@ -295,13 +322,13 @@ public class Rewriter extends ExpressionGrammarBaseVisitor<String> {
 
     @Override
     public String visitVar(ExpressionGrammarParser.VarContext ctx) {
-        System.out.println("visit " + ctx.getClass().getName());
+        //System.out.println("visit " + ctx.getClass().getName());
         return "$" + ctx.NAME().toString();
     }
 
     @Override
     public String visitFileName(ExpressionGrammarParser.FileNameContext ctx) {
-        System.out.println("visit " + ctx.getClass().getName());
+        //System.out.println("visit " + ctx.getClass().getName());
         return ctx.STRING().toString();
     }
 
@@ -363,24 +390,54 @@ public class Rewriter extends ExpressionGrammarBaseVisitor<String> {
     public String generateJoinSyntax(){
         List<Integer> keys = new ArrayList<>(group.keySet());
         StringBuilder sb = new StringBuilder();
-        sb.append("for $tuple in ");
         Set<String> preSet = new HashSet<>();
         List<String> nodes = group.get(0);
         for(String n : nodes){
             preSet.add(n);
         }
-        String pre = "join( " + forLoop(0) + ", \n" + forLoop(1) + ",\n" + getWhereClause(1, preSet) + ")";
-        sb.append(pre);
-        if(cnt == 2) sb.append("\n");
 
-        for(int i= 2 ; i < group.size(); i++) {
-            pre = "join( " + pre + ",\n" + forLoop(i) + getWhereClause(i, preSet) + ")";
-            sb.append(pre);
-            if(i == group.size() - 1){
-                sb.append("\n");
+        for(int i = 0; i < cnt; i++){
+            for(String node : group.get(i)){
+                from.put(node, i);
             }
         }
 
+        for(int i = 0; i < cnt; i++){
+            for(String node : group.get(i)){
+                if(!whereMap.containsKey(node)) continue;
+                for(String neighbor : whereMap.get(node)){
+                    link.computeIfAbsent(i, k-> new HashSet<>()).add(from.get(neighbor));
+                }
+            }
+        }
+
+        Set<Integer> visited = new HashSet<>();
+        sb.append(forLoop(0));
+        visited.add(0);
+        construct(0, visited, preSet, sb);
+
+        /*
+           start from forloop 0
+           [] data structures to hold variables of forloops
+           [] <- variables in 0
+           choose one forloop that is connected by a var in var[] and not visited
+           join both
+           append var[]
+         */
+//        String pre = "join( " + forLoop(0) + ", \n" + forLoop(1) + ",\n" + getWhereClause(1, preSet) + ")";
+//        if(cnt == 2){
+//            sb.append(pre);
+//            sb.append("\n");
+//        }
+//
+//        for(int i= 2 ; i < group.size(); i++) {
+//            pre = "join( " + pre + ",\n" + forLoop(i) + ",\n" + getWhereClause(i, preSet) + ")";
+//            if(i == group.size() - 1){
+//                sb.append(pre);
+//                sb.append("\n");
+//            }
+//        }
+        sb.insert(0, "for $tuple in ");
         sb.append(getFinalReturnSyntax());
         return sb.toString();
     }
@@ -402,6 +459,9 @@ public class Rewriter extends ExpressionGrammarBaseVisitor<String> {
 
         List<String> keys = new ArrayList<>();
         List<String> values = new ArrayList<>();
+        List<String> keys2 = new ArrayList<>();
+        List<String> values2 = new ArrayList<>();
+
 
         while(!q.isEmpty()){
             String n = q.pollFirst();
@@ -409,6 +469,14 @@ public class Rewriter extends ExpressionGrammarBaseVisitor<String> {
                 for(String value : whereEqStringConstantMap.get(n)){
                     keys.add(n);
                     values.add(value);
+                }
+            }
+            if(whereMap.containsKey(n)){
+                for(String value: whereMap.get(n)){
+                    if(from.get(value) == num) {
+                        keys2.add(n);
+                        values2.add(value);
+                    }
                 }
             }
 
@@ -422,19 +490,42 @@ public class Rewriter extends ExpressionGrammarBaseVisitor<String> {
         sb.delete(sb.length() - 2, sb.length());
         sb.append("\n");
 
+        if(keys.size() != 0 && values.size() != 0 || keys2.size() != 0 && values2.size() != 0) sb.append("where ");
         if(keys.size() != 0 && values.size() != 0){
-            sb.append("where ");
+
             for(int i = 0; i < keys.size(); i++){
                 sb.append("$" + keys.get(i) + " eq " + values.get(i) + "\n");
-                if(i != keys.size() - 1){
-                    sb.append(" and ");
+                if(i != keys.size() - 1 || i == keys.size() - 1 && keys2.size() != 0 && values2.size() != 0){
+                    sb.append("and ");
                 }
             }
-
-
         }
+
+        if(keys2.size() != 0 && values2.size() != 0){
+            for(int i = 0; i < keys2.size(); i++){
+                sb.append("$" + keys2.get(i) + " eq " + "$" + values2.get(i) + "\n");
+                if(i != keys2.size() - 1){
+                    sb.append("and ");
+                }
+            }
+        }
+
+
+
+
         sb.append(getReturnClause(num));
         return sb.toString();
+    }
+
+    public void construct(int i, Set<Integer> visited, Set<String> preSet, StringBuilder sb){
+        for(int neighbor : link.get(i)){
+            if(!visited.contains(neighbor)) {
+                visited.add(neighbor);
+                sb.insert(0, "join( ");
+                sb.append(",\n" + forLoop(neighbor) + ",\n" + getWhereClause(neighbor, preSet)+ ")");
+                construct(neighbor, visited, preSet, sb);
+            }
+        }
     }
 
     public String getWhereClause(int curr, Set<String> preSet){
@@ -446,8 +537,8 @@ public class Rewriter extends ExpressionGrammarBaseVisitor<String> {
             if(whereMap.containsKey(n)){
                 for(String value: whereMap.get(n)){
                         if (preSet.contains(value)) {
-                            keys.add(n);
-                            values.add(value);
+                            keys.add(value);
+                            values.add(n);
                         }
                 }
 
@@ -478,14 +569,13 @@ public class Rewriter extends ExpressionGrammarBaseVisitor<String> {
         //find all variable name and replace them with $ tuple/ varName /*
         for(List<String> name : group.values()){
             for(String n : name) {
-                //{$var} => {$tuple/n/*}
-                String d  = "\\{$" + n + "\\}";
+                //{$var => $tuple/n/*
+                String d  = "{$" + n;
                 if(returnSyntax.contains(d)){
-                    System.out.println(d);
-                    returnSyntax = returnSyntax.replaceAll(d, "\\{$tuple/" + n + "/*\\}");
+                    returnSyntax = returnSyntax.replaceAll("\\{\\$" + n, "\\{\\$tuple/" + n + "/*");
                 }
             }
         }
-        return "return " + returnSyntax;
+        return "\nreturn " + returnSyntax;
     }
 }

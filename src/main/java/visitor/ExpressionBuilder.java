@@ -11,6 +11,9 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
 import javax.xml.crypto.Data;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.PrintWriter;
 import java.lang.reflect.Array;
 import java.util.*;
 
@@ -44,7 +47,7 @@ public class ExpressionBuilder extends ExpressionGrammarBaseVisitor<DataContext>
 
     @Override
     public DataContext visitProg(ExpressionGrammarParser.ProgContext ctx) {
-        System.out.println("visit " + ctx.getClass().getName());
+//        System.out.println("visit " + ctx.getClass().getName());
         dataContext.put(ctx, new DataContext(null));
         if(ctx.xq() == null){
             return this.visit(ctx.exp(0));
@@ -55,16 +58,16 @@ public class ExpressionBuilder extends ExpressionGrammarBaseVisitor<DataContext>
 
     @Override
     public DataContext visitExp(ExpressionGrammarParser.ExpContext ctx) {
-        System.out.println("visit " + ctx.getClass().getName());
+//        System.out.println("visit " + ctx.getClass().getName());
         DataContext curr = pass(ctx);
-        System.out.println(curr);
+        //System.out.println(curr);
         DataContext d = this.visit(ctx.docName());
         d.data = reform(d.data, ctx.SLASH().toString());
         dataContext.put(ctx, d);
         DataContext result = this.visit(ctx.rp());
-        System.out.println("Exiting " + ctx.getClass().getName());
-        System.out.println(result.map);
-        System.out.println(result.data.size());
+//        System.out.println("Exiting " + ctx.getClass().getName());
+        //System.out.println(result.map);
+        //System.out.println(result.data.size());
         dataContext.put(ctx.getParent(), result);
         return result;
     }
@@ -150,16 +153,16 @@ public class ExpressionBuilder extends ExpressionGrammarBaseVisitor<DataContext>
 
     @Override
     public DataContext visitRp_Slash(ExpressionGrammarParser.Rp_SlashContext ctx) {
-        System.out.println("visit " + ctx.getClass().getName());
+//        System.out.println("visit " + ctx.getClass().getName());
         DataContext dc = pass(ctx);
 
         DataContext dc1 = this.visit(ctx.rp(0));
         dc1.data = reform(dc1.data, ctx.SLASH().toString());
-        System.out.println(dc1.data.size());
+        //System.out.println(dc1.data.size());
 
         dataContext.put(ctx, dc1);
         DataContext dc2 = this.visit(ctx.rp(1));
-        System.out.println("Exiting: " + ctx.getClass().getName());
+//        System.out.println("Exiting: " + ctx.getClass().getName());
 
         dataContext.put(ctx.getParent(), dc2);
         return dc2;
@@ -167,11 +170,11 @@ public class ExpressionBuilder extends ExpressionGrammarBaseVisitor<DataContext>
 
     private List<Node> reform(List<Node> data, String slash) {
         if (slash.equals("//")){
-            System.out.println("h");
+//            System.out.println("h");
             List<Node> l = populate(data);
             return l;
         }else{
-            System.out.println("2");
+//            System.out.println("2");
             Set<Node> result = new HashSet<>();
             for(Node node : data){
                 NodeList nodeList = node.getChildNodes();
@@ -202,11 +205,11 @@ public class ExpressionBuilder extends ExpressionGrammarBaseVisitor<DataContext>
                    exp
            docName // rp_tagName
         */
-        System.out.println("visit " + ctx.getClass().getName());
+//        System.out.println("visit " + ctx.getClass().getName());
         DataContext dc = pass(ctx);
-        System.out.println(dc.map);
-        System.out.println(dc.data.size());
-        System.out.println("Data " + String.valueOf(dc.data.size()));
+        //System.out.println(dc.map);
+        //System.out.println(dc.data.size());
+//        System.out.println("Data " + String.valueOf(dc.data.size()));
 
         List<Node> nodeList = dc.data;
         DataContext d = this.visit(ctx.tagName());
@@ -217,8 +220,8 @@ public class ExpressionBuilder extends ExpressionGrammarBaseVisitor<DataContext>
                 result.add(n);
             }
         }
-        System.out.println("Exiting: " + ctx.getClass().getName());
-        System.out.println(result.size());
+//        System.out.println("Exiting: " + ctx.getClass().getName());
+        //System.out.println(result.size());
 
         dc = new DataContext(new ArrayList<>(result), dc.map);
         dataContext.put(ctx.getParent(), dc);
@@ -231,13 +234,13 @@ public class ExpressionBuilder extends ExpressionGrammarBaseVisitor<DataContext>
 //
     @Override
     public DataContext visitRp_Text(ExpressionGrammarParser.Rp_TextContext ctx) {
-        System.out.println("visit " + ctx.getClass().getName());
+//        System.out.println("visit " + ctx.getClass().getName());
         //assume the path is correct
         DataContext dc = pass(ctx);
 
         dataContext.put(ctx.getParent(), dc.clone());
-        System.out.println("Exiting: " + ctx.getClass().getName());
-        System.out.println(dc.toString());
+//        System.out.println("Exiting: " + ctx.getClass().getName());
+//        System.out.println(dc.toString());
         return dataContext.get(ctx.getParent());
     }
 
@@ -254,7 +257,7 @@ public class ExpressionBuilder extends ExpressionGrammarBaseVisitor<DataContext>
 
     @Override
     public DataContext visitTagName(ExpressionGrammarParser.TagNameContext ctx) {
-        System.out.println("visit " + ctx.getClass().getName());
+//        System.out.println("visit " + ctx.getClass().getName());
         DataContext dc = pass(ctx);
         dc.name = ctx.NAME().toString();
         return dc.clone();
@@ -372,6 +375,7 @@ public class ExpressionBuilder extends ExpressionGrammarBaseVisitor<DataContext>
     public DataContext visitXQ_JOIN(ExpressionGrammarParser.XQ_JOINContext ctx){
         DataContext curr = pass(ctx);
         DataContext dc = this.visit(ctx.xq(0));
+        dataContext.put(ctx, curr);
         DataContext dc2 = this.visit(ctx.xq(1));
         DataContext dc4 = this.visit(ctx.namelist(0));
         DataContext dc8 = this.visit(ctx.namelist(1));
@@ -379,34 +383,43 @@ public class ExpressionBuilder extends ExpressionGrammarBaseVisitor<DataContext>
         String[] nameList2 =dc8.name.split(",");
         List<Map<String, List<Node>>> newList = new ArrayList<>();
 
-        for(int i = 0; i < dc.data.size(); i++){
-            Map<String, List<Node>> map = getMapFromTuple(dc.data.get(i));
-            for(int j = 0; j < dc2.data.size(); j++){
-                Map<String, List<Node>> map2 = getMapFromTuple(dc2.data.get(j));
 
-                boolean ok = true;
-                for(int k = 0; k < nameList.length; k++){
-                    String name = nameList[k];
-                    String name2 = nameList2[k];
-                    if(!map.get(name).get(0).isEqualNode(map2.get(name2).get(0))){
-                        ok =false;
-                        break;
-                    }
-                }
-                if(ok){
-                    Map<String, List<Node>> result = new HashMap<>(map);
-                    result.putAll(map2);
-                    newList.add(result);
+        Map<Long, List<Map<String,List<Node>>>> tupleMap = new HashMap<>();
+        for(int i = 0; i < dc.data.size(); i++) {
+            Map<String, List<Node>> tuple = getMapFromTuple(dc.data.get(i));
+            tupleMap.computeIfAbsent(getHashCode(tuple, nameList), k -> new ArrayList<>()).add(tuple);
+        }
+
+        for(int j = 0; j < dc2.data.size(); j++){
+            Map<String, List<Node>> tuple2 = getMapFromTuple(dc2.data.get(j));
+            long hashCode = getHashCode(tuple2, nameList2);
+
+            if(!tupleMap.containsKey(hashCode)) continue;
+            for(Map<String, List<Node>> tuple : tupleMap.get(hashCode)) {
+                if(isEqual(tuple, nameList, tuple2, nameList2)) {
+                    newList.add(join(tuple,tuple2));
                 }
             }
         }
 
+//        for(int i = 0; i < dc.data.size(); i++) {
+//            Map<String, List<Node>> tuple = getMapFromTuple(dc.data.get(i));
+//            for (int j = 0; j < dc2.data.size(); j++) {
+//                Map<String, List<Node>> tuple2 = getMapFromTuple(dc2.data.get(j));
+//                if (isEqual(tuple, nameList, tuple2, nameList2)) {
+//                        newList.add(join(tuple, tuple2));
+//                } }
+//        }
+
         Set<Node> result = new HashSet<>();
-        for(Map<String, List<Node>> p : newList){
+
+        for(int i = 0; i < newList.size(); i++){
+            Map<String, List<Node>> p = newList.get(i);
             Node n = document.createElement("tuple");
             for (Map.Entry<String, List<Node>> e : p.entrySet()) {
                 Node varNode = document.createElement(e.getKey());
-                for(Node node : e.getValue()) {
+                List<Node> l = e.getValue();
+                for(Node node : l) {
                     Node n2 = document.importNode(node.cloneNode(true), true);
                     varNode.appendChild(n2);
                 }
@@ -414,9 +427,45 @@ public class ExpressionBuilder extends ExpressionGrammarBaseVisitor<DataContext>
             }
             result.add(n);
         }
-        return new DataContext(new ArrayList<>(result), new HashMap<>(), null, false, newList);
+        curr.data = new ArrayList<>(result);
+        curr.possibilities = newList;
+        return curr;
     }
 
+    public boolean isEqual(Map<String, List<Node>> map, String[] nameList, Map<String, List<Node>> map2, String[] nameList2){
+        for(int i = 0; i < nameList.length; i++) {
+            List<Node> value = map.get(nameList[i]);
+            List<Node> value2 = map2.get(nameList2[i]);
+            if(value.size() != value2.size()) return false;
+            for(int j = 0; j < value.size(); j++){
+                if(!value.get(j).isEqualNode(value2.get(j))){
+                    return false;
+                }
+            }
+
+        }
+        return true;
+    }
+
+    public Map<String, List<Node>> join(Map<String, List<Node>> map, Map<String, List<Node>> map2){
+        Map<String, List<Node>> result = new HashMap<>(map);
+        result.putAll(map2);
+        return result;
+    }
+
+    public Long getHashCode(Map<String, List<Node>> tuple, String[] nameList) {
+        long hashCode = 0;
+        for(String name: nameList){
+            Node n = tuple.get(name).get(0);
+            n = n.getFirstChild();
+            if(n == null) return hashCode % 10;
+            String textContent = n.getTextContent();
+            if(textContent != null){
+                hashCode += textContent.hashCode();
+            }
+        }
+        return hashCode % 10;
+    }
     public Map<String, List<Node>> getMapFromTuple(Node n){
         Map<String, List<Node>> map = new HashMap<>();
         for(Node child = n.getFirstChild(); child != null; child = child.getNextSibling()){
@@ -426,43 +475,42 @@ public class ExpressionBuilder extends ExpressionGrammarBaseVisitor<DataContext>
     }
     @Override
     public DataContext visitXQ_TAGNAME(ExpressionGrammarParser.XQ_TAGNAMEContext ctx) {
-        System.out.println("visit " + ctx.getClass().getName());
+//        System.out.println("visit " + ctx.getClass().getName());
         DataContext curr = pass(ctx);
         DataContext dc = this.visit(ctx.tagName(0));
         DataContext xq = this.visit(ctx.xq());
 
         //insert the node before list of node in xq
         Node n = document.createElement(dc.name);
-        System.out.println(xq.data);
+//        System.out.println(xq.data);
         for (Node node : xq.data) {
             Node n2 = document.importNode(node.cloneNode(true), true);
             n.appendChild(n2);
         }
-
         dc.data = new ArrayList<Node>();
         dc.data.add(n);
-        System.out.println("Exiting XQ_TAGNAME");
-        System.out.println(dc.data);
-        System.out.println(dc.map);
+//        System.out.println("Exiting XQ_TAGNAME");
+//        System.out.println(dc.data);
+//        System.out.println(dc.map);
         dataContext.put(ctx.getParent(), dc);
         return dc;
     }
 //
     @Override
     public DataContext visitXQ_SLASH(ExpressionGrammarParser.XQ_SLASHContext ctx) {
-        System.out.println("Visiting " + ctx.getClass().getName());
+//        System.out.println("Visiting " + ctx.getClass().getName());
         DataContext dc = pass(ctx);
-        System.out.println(dc.data);
-        System.out.println(dc.map);
+//        System.out.println(dc.data);
+//        System.out.println(dc.map);
 
         DataContext xq = this.visit(ctx.xq());
         xq.data = reform(xq.data, ctx.SLASH().toString());
 
         dataContext.put(ctx, xq);
         dataContext.put(ctx.getParent(), this.visit(ctx.rp()));
-        System.out.println("Exiting " + ctx.getClass().getName());
-        System.out.println(dataContext.get(ctx.getParent()).data);
-        System.out.println(dataContext.get(ctx.getParent()).map);
+//        System.out.println("Exiting " + ctx.getClass().getName());
+//        System.out.println(dataContext.get(ctx.getParent()).data);
+//        System.out.println(dataContext.get(ctx.getParent()).map);
         return dataContext.get(ctx.getParent());
     }
 
@@ -478,18 +526,18 @@ public class ExpressionBuilder extends ExpressionGrammarBaseVisitor<DataContext>
 
     @Override
     public DataContext visitXQ_STRING(ExpressionGrammarParser.XQ_STRINGContext ctx) {
-        System.out.println("visit " + ctx.getClass().getName());
+//        System.out.println("visit " + ctx.getClass().getName());
         DataContext curr = pass(ctx);
         DataContext dc = this.visit(ctx.stringConst());
 
-        System.out.println("exit  " + ctx.getClass().getName());
-        dataContext.put(ctx.getParent(), dc.clone());
+//        System.out.println("exit  " + ctx.getClass().getName());
+        dataContext.put(ctx.getParent(), dc);
         return dataContext.get(ctx.getParent());
     }
 
     @Override
     public DataContext visitXQ_EXP(ExpressionGrammarParser.XQ_EXPContext ctx) {
-        System.out.println("visit " + ctx.getClass().getName());
+//        System.out.println("visit " + ctx.getClass().getName());
         DataContext dc = dataContext.get(ctx.getParent());
         if(dc == null){
             dataContext.put(ctx, new DataContext(null));
@@ -497,11 +545,11 @@ public class ExpressionBuilder extends ExpressionGrammarBaseVisitor<DataContext>
         }else{
             dataContext.put(ctx, dc);
         }
-        System.out.println(dc.map);
+//        System.out.println(dc.map);
         DataContext result =  this.visit(ctx.exp());
-        System.out.println("Exiting " + ctx.getClass().getName());
-        System.out.println(result.map);
-        System.out.println(result.data.size());
+//        System.out.println("Exiting " + ctx.getClass().getName());
+//        System.out.println(result.map);
+//        System.out.println(result.data.size());
         dataContext.put(ctx.getParent(), result);
         return result;
 
@@ -509,9 +557,9 @@ public class ExpressionBuilder extends ExpressionGrammarBaseVisitor<DataContext>
 
     @Override
     public DataContext visitXQ_VAR(ExpressionGrammarParser.XQ_VARContext ctx) {
-        System.out.println("visit " + ctx.getClass().getName());
+//        System.out.println("visit " + ctx.getClass().getName());
         DataContext curr = pass(ctx);
-        System.out.println(curr.map);
+        //System.out.println(curr.map);
         DataContext dc = this.visit(ctx.var());
 
 
@@ -520,16 +568,16 @@ public class ExpressionBuilder extends ExpressionGrammarBaseVisitor<DataContext>
             throw new IllegalArgumentException("Illegal variable name");
         }
         result.data = result.map.get(dc.name);
-        System.out.println(result.data);
-        System.out.println(result.map);
+//        System.out.println(result.data);
+//        System.out.println(result.map);
 
-        dataContext.put(ctx.getParent(), result);
+        //dataContext.put(ctx.getParent(), result);
         return result;
     }
 
     @Override
     public DataContext visitXQ_COMMA(ExpressionGrammarParser.XQ_COMMAContext ctx) {
-        System.out.println("visit " + ctx.getClass().getName());
+//        System.out.println("visit " + ctx.getClass().getName());
         DataContext curr = pass(ctx);
         DataContext xq = this.visit(ctx.xq(0));
         dataContext.put(ctx, curr);
@@ -541,26 +589,28 @@ public class ExpressionBuilder extends ExpressionGrammarBaseVisitor<DataContext>
 
 
         dataContext.put(ctx.getParent(), new DataContext(res, curr.map));
-        System.out.println("exiting " + ctx.getClass().getName());
+//        System.out.println("exiting " + ctx.getClass().getName());
         return dataContext.get(ctx.getParent());
     }
 
 
     @Override
     public DataContext visitXQ_FOR(ExpressionGrammarParser.XQ_FORContext ctx) {
-        pass(ctx);
+        DataContext curr = pass(ctx);
+        Map<String, List<Node>> oldMap = new HashMap<>(curr.map);
 
         this.visit(ctx.forClause());
         this.visit(ctx.letClause());
         this.visit(ctx.whereClause());
         DataContext dc =  this.visit(ctx.returnClause());
+        dc.map = oldMap;
         dataContext.put(ctx.getParent(), dc);
         return dc;
     }
 
     @Override
     public DataContext visitForClause(ExpressionGrammarParser.ForClauseContext ctx) {
-        System.out.println("visit " + ctx.getClass().getName());
+//        System.out.println("visit " + ctx.getClass().getName());
         DataContext curr = pass(ctx);
         DataContext dc = this.visit(ctx.items());
 
@@ -574,7 +624,7 @@ public class ExpressionBuilder extends ExpressionGrammarBaseVisitor<DataContext>
             dataContext.put(ctx.getParent(), dc.clone());
             return dataContext.get(ctx.getParent());
         }else {
-            System.out.println(dc);
+            //System.out.println(dc);
             dataContext.put(ctx.getParent(), dc);
             return dc;
         }
@@ -582,12 +632,12 @@ public class ExpressionBuilder extends ExpressionGrammarBaseVisitor<DataContext>
 
     @Override
     public DataContext visitITEM_MULTIPLE(ExpressionGrammarParser.ITEM_MULTIPLEContext ctx) {
-        System.out.println("visit " + ctx.getClass().getName());
+//        System.out.println("visit " + ctx.getClass().getName());
         DataContext curr = pass(ctx);
 
         DataContext dc = this.visit(ctx.item());
 
-        System.out.println("middle");
+//        System.out.println("middle");
 
         //get c = {a: [1, 2]} p = {a=1, a=2}
         //update change in c to parent
@@ -630,14 +680,14 @@ public class ExpressionBuilder extends ExpressionGrammarBaseVisitor<DataContext>
         }
         curr.possibilities = possibilities;
 
-        System.out.println("exiting " + ctx.getClass().getName());
+//        System.out.println("exiting " + ctx.getClass().getName());
         dataContext.put(ctx.getParent(), curr.clone());
         return dataContext.get(ctx.getParent());
     }
 
     @Override
     public DataContext visitITEM_ONE(ExpressionGrammarParser.ITEM_ONEContext ctx) {
-        System.out.println("visit " + ctx.getClass().getName());
+//        System.out.println("visit " + ctx.getClass().getName());
         //copy from parent
         //go to item to get data
         // added to possibilities
@@ -648,14 +698,14 @@ public class ExpressionBuilder extends ExpressionGrammarBaseVisitor<DataContext>
         //for each p = {a=1} for example pass it:
         DataContext dc = this.visit(ctx.item());
 
-        System.out.println("exiting " + ctx.getClass().getName());
+//        System.out.println("exiting " + ctx.getClass().getName());
         dataContext.put(ctx.getParent(), dc.clone());
         return dataContext.get(ctx.getParent());
     }
 
     @Override
     public DataContext visitItem(ExpressionGrammarParser.ItemContext ctx) {
-        System.out.println("visit " + ctx.getClass().getName());
+//        System.out.println("visit " + ctx.getClass().getName());
 
         //copy c:{a : [1,2]} p:{a=1, a= 2}
         DataContext curr = pass(ctx);
@@ -690,8 +740,8 @@ public class ExpressionBuilder extends ExpressionGrammarBaseVisitor<DataContext>
 
         //return curr
         dataContext.put(ctx.getParent(), curr.clone());
-        System.out.println("exiting item");
-        System.out.println(dataContext.get(ctx.getParent()).toString());
+//        System.out.println("exiting item");
+        //System.out.println(dataContext.get(ctx.getParent()).toString());
         return dataContext.get(ctx.getParent());
     }
 
@@ -836,14 +886,14 @@ public class ExpressionBuilder extends ExpressionGrammarBaseVisitor<DataContext>
 
         //return curr
         dataContext.put(ctx.getParent(), curr.clone());
-        System.out.println("exiting item");
-        System.out.println(dataContext.get(ctx.getParent()).toString());
+//        System.out.println("exiting item");
+        //System.out.println(dataContext.get(ctx.getParent()).toString());
         return dataContext.get(ctx.getParent());
     }
 
     @Override
     public DataContext visitWHERE_CONDITION(ExpressionGrammarParser.WHERE_CONDITIONContext ctx) {
-        System.out.println("visit " + ctx.getClass().getName());
+//        System.out.println("visit " + ctx.getClass().getName());
         DataContext curr = pass(ctx);
 
         //for map is with all kind of combinations
@@ -852,7 +902,7 @@ public class ExpressionBuilder extends ExpressionGrammarBaseVisitor<DataContext>
         List<Map<String, List<Node>>> originalP = curr.possibilities;
 
 
-        System.out.println(curr.data);
+        //System.out.println(curr.data);
         for(Map<String, List<Node>> entry : originalP){
             curr.map = entry;
             curr.possibilities = Arrays.asList(entry);
@@ -863,7 +913,7 @@ public class ExpressionBuilder extends ExpressionGrammarBaseVisitor<DataContext>
                 filter.add(entry);
             }
         }
-        System.out.println("Exiting Where_Condition");
+//        System.out.println("Exiting Where_Condition");
         curr.map = originalMap;
 
         curr.possibilities = filter;
@@ -882,7 +932,7 @@ public class ExpressionBuilder extends ExpressionGrammarBaseVisitor<DataContext>
            XQ needs List<Node>
 
          */
-        System.out.println("visit " + ctx.getClass().getName());
+//        System.out.println("visit " + ctx.getClass().getName());
         DataContext curr = pass(ctx);
 
         dataContext.put(ctx.getParent(), curr);
@@ -896,7 +946,7 @@ public class ExpressionBuilder extends ExpressionGrammarBaseVisitor<DataContext>
            $Y : [y1, y2]
          */
 
-        System.out.println("visit " + ctx.getClass().getName());
+        //System.out.println("visit " + ctx.getClass().getName());
 
         DataContext dc = new DataContext(null);
         DataContext curr = pass(ctx);
@@ -915,10 +965,10 @@ public class ExpressionBuilder extends ExpressionGrammarBaseVisitor<DataContext>
         }
         dc.data = new ArrayList<>(result);
 
-        System.out.println("Exiting: " + ctx.getClass().getName());
+//        System.out.println("Exiting: " + ctx.getClass().getName());
         dc.map = oldMap;
         dc.possibilities = originalP;
-        System.out.println(dc.data);
+        //System.out.println(dc.data);
         return dc;
     }
 
@@ -1028,16 +1078,16 @@ public class ExpressionBuilder extends ExpressionGrammarBaseVisitor<DataContext>
 
         curr.ok = ok;
 
-        System.out.println("Exiting Cond EQUAL");
-        System.out.println(curr.toString());
+        //System.out.println("Exiting Cond EQUAL");
+        //System.out.println(curr.toString());
         return curr.clone();
     }
 
     @Override
     public DataContext visitDocName(ExpressionGrammarParser.DocNameContext ctx) {
-        System.out.println("visit " + ctx.getClass().getName());
+        //System.out.println("visit " + ctx.getClass().getName());
         DataContext curr = pass(ctx);
-        System.out.println(curr.map);
+        //System.out.println(curr.map);
         //get filename
         DataContext fileName = this.visit(ctx.fileName());
 
@@ -1055,7 +1105,7 @@ public class ExpressionBuilder extends ExpressionGrammarBaseVisitor<DataContext>
 
     @Override
     public DataContext visitVar(ExpressionGrammarParser.VarContext ctx) {
-        System.out.println("visit " + ctx.getClass().getName());
+        //System.out.println("visit " + ctx.getClass().getName());
         return new DataContext(ctx.NAME().toString());
     }
 
@@ -1077,7 +1127,7 @@ public class ExpressionBuilder extends ExpressionGrammarBaseVisitor<DataContext>
     }
     @Override
     public DataContext visitFileName(ExpressionGrammarParser.FileNameContext ctx) {
-        System.out.println("visit " + ctx.getClass().getName());
+        //System.out.println("visit " + ctx.getClass().getName());
         return new DataContext(ctx.STRING().toString());
     }
 
@@ -1249,8 +1299,8 @@ public class ExpressionBuilder extends ExpressionGrammarBaseVisitor<DataContext>
         //get a dc from parent and store a clone in current node
         DataContext dc = dataContext.getOrDefault(ctx.getParent(), new DataContext(null));
         put(ctx, dc);
-        System.out.println("Entering: " + ctx.getClass().getName());
-        System.out.println(dataContext.get(ctx).toString());
+        //System.out.println("Entering: " + ctx.getClass().getName());
+        //System.out.println(dataContext.get(ctx).toString());
         return dataContext.get(ctx);
     }
 //    @Override

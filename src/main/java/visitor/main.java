@@ -26,9 +26,9 @@ import java.util.List;
 public class main {
     static Document document;
     public static void main(String[] args) throws Exception {
-        String filename = "Input_Query.txt";
+        String filename = args[0];
         String expression = Files.readString(Path.of(filename));
-        String output_filename = "Query_Results.xml";
+        String output_filename = "xquery_m3_result.txt";
         test(expression, output_filename);
 
         //expression = "doc(\"j_caesar.xml\")//PERSONA";
@@ -67,9 +67,7 @@ public class main {
     public static void test(String expression, String output_filename) throws Exception {
         // Output file
         File queryResultsFile = new File(output_filename);
-        if(queryResultsFile.createNewFile()){
-            System.out.println("File " + queryResultsFile + " created in Project root directory");
-        }else System.out.println("File " + queryResultsFile + " already exists in the project root directory");
+        queryResultsFile.createNewFile();
 
         // Create an empty output tag/element
         DocumentBuilderFactory documentBuilderFactory = DocumentBuilderFactory.newInstance();
@@ -78,33 +76,49 @@ public class main {
         Element root = document.createElement("OUTPUT");
 
         // Execute query
-        System.out.println(expression);
+//        System.out.println(expression);
         final ExpressionGrammarLexer lexer = new ExpressionGrammarLexer(CharStreams.fromString(expression));
         final CommonTokenStream tokens = new CommonTokenStream(lexer);
         final ExpressionGrammarParser parser = new ExpressionGrammarParser(tokens);
         final ParserRuleContext tree = parser.prog();
         final ProgramBuilder programBuilder = new ProgramBuilder();
+        final ProgramBuilder programBuilder2 = new ProgramBuilder();
+
         final Rewriter rewriter = new Rewriter();
         String result = rewriter.visit(tree);
-        PrintWriter printWriter = new PrintWriter("rewritten_query.txt");
+        PrintWriter printWriter = new PrintWriter("xquery_rewritten.txt");
         printWriter.println(result);
         printWriter.flush();
 
-
+//        System.out.println(result);
 
 
         final ExpressionGrammarLexer newlexer = new ExpressionGrammarLexer(CharStreams.fromString(result));
         final CommonTokenStream newtokens = new CommonTokenStream(newlexer);
         final ExpressionGrammarParser newparser = new ExpressionGrammarParser(newtokens);
         final ParserRuleContext tree2 = newparser.prog();
-
+        long curr = System.currentTimeMillis();
         final DataContext dataContext = programBuilder.visit(tree2);
-        System.out.println(dataContext);
+        long e = System.currentTimeMillis();
+        System.out.printf("Rewritten: It takes %d milliseconds\n", e - curr);
+
+
+
+//        final ExpressionGrammarLexer lexer2 = new ExpressionGrammarLexer(CharStreams.fromString(expression));
+//        final CommonTokenStream tokens2 = new CommonTokenStream(lexer2);
+//        final ExpressionGrammarParser parser2 = new ExpressionGrammarParser(tokens2);
+//        final ParserRuleContext tree4 = parser2.prog();
+//
+//        long curr2 = System.currentTimeMillis();
+//        final DataContext dataContext2 = programBuilder2.visit(tree4);
+//        long e2 = System.currentTimeMillis();
+//        System.out.printf("It takes %d milliseconds\n", e2 - curr2);
+//        System.out.println(dataContext);
 //
 //
 //        // Debugging
         List<Node> resultNodes = dataContext.data;
-//        System.out.println("Result: " + resultNodes.size());
+        System.out.println("Result: " + resultNodes.size());
 //        System.out.println(resultNodes);
 //
         for(Node d : resultNodes) {

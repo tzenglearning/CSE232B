@@ -1,0 +1,21 @@
+for $tuple in join( for $a in doc("j_caesar_M3.xml")//ACT,
+$sa in $a//SCENE,
+$spa in $sa//SPEAKER
+return <tuple>{
+<a>{$a}</a>,
+<sa>{$sa}</sa>,
+<spa>{$spa}</spa>
+}</tuple>,
+for $b in doc("j_caesar_M3.xml")//ACT,
+$sb in $b//SCENE,
+$spb in $sb//SPEAKER/text(),
+$spc in $sb//SPEAKER
+where $spb eq "FLAVIUS"
+return <tuple>{
+<b>{$b}</b>,
+<sb>{$sb}</sb>,
+<spb>{$spb}</spb>,
+<spc>{$spc}</spc>
+}</tuple>,
+[spa, sa], [spc, sb])
+return <result>{<title>{$tuple/sa/*/TITLE/text()}</title>}</result>

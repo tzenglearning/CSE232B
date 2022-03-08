@@ -15,8 +15,8 @@ public class DataContext {
     public boolean ok;
     public List<Map<String, List<Node>>> possibilities;
     public DataContext(List<Node> data, Map<String, List<Node>> map){
-        this.data  = new ArrayList<>(data);
-        this.map = new HashMap<>(map);
+        this.data  = data;
+        this.map = map;
         this.possibilities = new ArrayList<>();
     }
 
@@ -28,8 +28,8 @@ public class DataContext {
     }
 
     public DataContext(List<Node> data, Map<String, List<Node>> map, String name){
-        this.data  = new ArrayList<>(data);
-        this.map = new HashMap<>(map);
+        this.data  = data;
+        this.map = map;
         this.name = name;
         this.possibilities = new ArrayList<>();
     }
@@ -43,17 +43,17 @@ public class DataContext {
     }
 
     public DataContext(List<Node> data, Map<String, List<Node>> map, String name, boolean ok, List<Map<String, List<Node>>> list){
-        this.data  = new ArrayList<>(data);
-        this.map = new HashMap<>(map);
+        this.data  = data;
+        this.map = map;
         this.name = name;
         this.ok = ok;
-        this.possibilities = new ArrayList<>(list);
+        this.possibilities = list;
     }
 
     public DataContext(Map<String, List<Node>> map, List<Map<String, List<Node>>> list){
         this.data  = new ArrayList<>();
-        this.map = new HashMap<>(map);
-        this.possibilities = new ArrayList<>(list);
+        this.map = map;
+        this.possibilities = list;
     }
 
     public DataContext clone(){
